@@ -9,8 +9,20 @@ export const handlers = [
     const url = new URL(request.url);
     const search = url.searchParams.get('search') || '';
     let results = mockDirectReports;
-    // Basic search filtering
-    if (search.includes('profile.firstName sw')) {
+    // Contains (co) search filtering — used by delegate search
+    if (search.includes(' co ')) {
+      const match = search.match(/profile\.firstName co "([^"]+)"/);
+      if (match) {
+        const q = match[1].toLowerCase();
+        results = results.filter(u =>
+          u.profile.firstName.toLowerCase().includes(q) ||
+          u.profile.lastName.toLowerCase().includes(q) ||
+          u.profile.email.toLowerCase().includes(q)
+        );
+      }
+    }
+    // Starts-with (sw) search filtering — used by direct reports search
+    else if (search.includes('profile.firstName sw')) {
       const match = search.match(/profile\.firstName sw "([^"]+)"/);
       if (match) {
         results = results.filter(u => u.profile.firstName.toLowerCase().startsWith(match[1].toLowerCase()));
@@ -99,6 +111,25 @@ export const handlers = [
 
   http.delete(`${OKTA_BASE}/governance/api/v2/delegates/:id`, () => {
     return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Principal Settings (Delegate Appointments)
+  http.patch(`${OKTA_BASE}/governance/api/v1/principal-settings/:userId`, async ({ params, request }) => {
+    const body = await request.json() as Record<string, unknown>;
+    const appointments = (body as any)?.delegates?.appointments || [];
+    const appointment = appointments[0] || {};
+    return HttpResponse.json({
+      id: 'appt-new',
+      delegator: { externalId: params.userId as string, type: 'OKTA_USER' },
+      delegate: appointment.delegate || { externalId: 'unknown', type: 'OKTA_USER' },
+      startTime: appointment.startTime || new Date().toISOString(),
+      endTime: appointment.endTime || new Date().toISOString(),
+      note: appointment.note || '',
+      createdBy: 'manager@example.com',
+      created: new Date().toISOString(),
+      lastUpdated: new Date().toISOString(),
+      lastUpdatedBy: 'manager@example.com',
+    });
   }),
 
   // Org

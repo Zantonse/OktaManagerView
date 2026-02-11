@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getUser, updateUserProfile } from "@/lib/okta/client";
+import { getUser, appointDelegate } from "@/lib/okta/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(
@@ -21,41 +21,31 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { onPTO, ptoStartDate, ptoEndDate } = body;
+    const { ptoStartDate, ptoEndDate, delegateId, note } = body;
 
-    // Update the user profile
-    const profileUpdate: Record<string, any> = {};
-
-    if (onPTO) {
-      // Setting PTO on
-      profileUpdate.onPTO = true;
-      profileUpdate.ptoStartDate = ptoStartDate;
-      profileUpdate.ptoEndDate = ptoEndDate;
-    } else {
-      // Clearing PTO
-      profileUpdate.onPTO = false;
-      profileUpdate.ptoStartDate = null;
-      profileUpdate.ptoEndDate = null;
-    }
-
-    const updatedUser = await updateUserProfile(userId, profileUpdate);
-    return NextResponse.json(updatedUser);
-  } catch (error) {
-    console.error("Error updating PTO status:", error);
-    const statusCode = (error as any)?.statusCode || 500;
-    const errorMessage = (error as any)?.message || "";
-
-    // Okta returns 400 with "userProfile" validation error when custom attributes
-    // (onPTO, ptoStartDate, ptoEndDate) are not defined in the org's Universal Directory schema
-    if (statusCode === 400 && errorMessage.includes("userProfile")) {
+    if (!delegateId) {
       return NextResponse.json(
-        { error: "PTO custom attributes are not configured in your Okta org. An admin needs to add onPTO, ptoStartDate, and ptoEndDate to the User profile schema." },
+        { error: "A delegate is required" },
         { status: 400 }
       );
     }
 
+    const fullName = `${user.profile.firstName} ${user.profile.lastName}`;
+    const delegateNote = note || `${fullName} is on PTO, and you have been appointed to cover for this duration. Thank you!`;
+
+    const result = await appointDelegate(userId, {
+      delegateId,
+      note: delegateNote,
+      startTime: `${ptoStartDate}T08:00:00.000Z`,
+      endTime: `${ptoEndDate}T08:00:00.000Z`,
+    });
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Error assigning delegate:", error);
+    const statusCode = (error as any)?.statusCode || 500;
     return NextResponse.json(
-      { error: (error as any)?.getUserFriendlyMessage?.() || "Failed to update PTO status" },
+      { error: (error as any)?.getUserFriendlyMessage?.() || "Failed to assign delegate" },
       { status: statusCode }
     );
   }

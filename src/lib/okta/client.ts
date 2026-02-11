@@ -111,6 +111,17 @@ export async function getDirectReports(managerEmail: string, params?: { search?:
   });
 }
 
+export async function searchAllUsers(query: string, params?: { limit?: string }) {
+  const search = `profile.firstName co "${query}" or profile.lastName co "${query}" or profile.email co "${query}"`;
+
+  return oktaFetch<import('@/types/okta').OktaUser[]>('/api/v1/users', {
+    params: {
+      search,
+      ...(params?.limit && { limit: params.limit }),
+    },
+  });
+}
+
 export async function getUser(userId: string) {
   return oktaFetch<import('@/types/okta').OktaUser>(`/api/v1/users/${userId}`);
 }
@@ -196,6 +207,32 @@ export async function updateAccessRequest(requestId: string, decision: { status:
     method: 'PUT',
     body: decision,
   });
+}
+
+// ─── Governance - Principal Settings (Delegate Appointments) ─
+
+export async function appointDelegate(userId: string, appointment: {
+  delegateId: string;
+  note: string;
+  startTime: string;
+  endTime: string;
+}) {
+  return oktaFetch<import('@/types/okta').OktaDelegateAppointment>(
+    `/governance/api/v1/principal-settings/${userId}`,
+    {
+      method: 'PATCH',
+      body: {
+        delegates: {
+          appointments: [{
+            delegate: { externalId: appointment.delegateId, type: 'OKTA_USER' },
+            note: appointment.note,
+            startTime: appointment.startTime,
+            endTime: appointment.endTime,
+          }],
+        },
+      },
+    }
+  );
 }
 
 // ─── Governance - Delegates (Beta) ────────────────────

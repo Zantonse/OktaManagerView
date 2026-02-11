@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { OktaUser } from "@/types/okta";
 import {
   Dialog,
@@ -18,9 +18,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils/date";
 import { cn } from "@/lib/utils";
+import { Search, X } from "lucide-react";
 
 interface PTODialogProps {
   user: OktaUser;
@@ -36,10 +39,12 @@ export function PTODialog({
   onSuccess,
 }: PTODialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
   const [startDate, setStartDate] = useState<Date | undefined>(
     user.profile.ptoStartDate
       ? new Date(user.profile.ptoStartDate)
-      : new Date()
+      : tomorrow
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
     user.profile.ptoEndDate
@@ -47,19 +52,71 @@ export function PTODialog({
       : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   );
 
-  const isMarkingPTO = !user.profile.onPTO;
-  const title = isMarkingPTO ? "Mark PTO" : "End PTO";
+  // Delegate search state
+  const [delegateUser, setDelegateUser] = useState<OktaUser | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<OktaUser[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+
   const fullName = `${user.profile.firstName} ${user.profile.lastName}`;
 
-  const handleSubmit = async () => {
-    // Validate dates for marking PTO
-    if (isMarkingPTO && (!startDate || !endDate)) {
-      toast.error("Please select both start and end dates");
+  const defaultNote = `${fullName} is on PTO, and you have been appointed to cover for this duration. Thank you!`;
+  const [note, setNote] = useState(defaultNote);
+
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowResults(false);
       return;
     }
 
-    if (isMarkingPTO && startDate && endDate && startDate > endDate) {
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `/api/okta/users/search?q=${encodeURIComponent(query)}&limit=10`
+      );
+      if (response.ok) {
+        const users: OktaUser[] = await response.json();
+        // Filter out the PTO user themselves
+        setSearchResults(users.filter((u) => u.id !== user.id));
+        setShowResults(true);
+      }
+    } catch (error) {
+      console.error("Error searching users:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [user.id]);
+
+  const handleSelectDelegate = (selected: OktaUser) => {
+    setDelegateUser(selected);
+    setSearchQuery("");
+    setShowResults(false);
+    setSearchResults([]);
+  };
+
+  const handleClearDelegate = () => {
+    setDelegateUser(null);
+    setSearchQuery("");
+  };
+
+  const handleSubmit = async () => {
+    if (!startDate || !endDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+    if (startDate > endDate) {
       toast.error("End date must be after start date");
+      return;
+    }
+    if (!delegateUser) {
+      toast.error("Please select a delegate");
+      return;
+    }
+    if (!note.trim()) {
+      toast.error("Please provide a note for the delegate");
       return;
     }
 
@@ -69,49 +126,114 @@ export function PTODialog({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          onPTO: isMarkingPTO,
-          ...(isMarkingPTO && {
-            ptoStartDate: startDate?.toISOString().split("T")[0],
-            ptoEndDate: endDate?.toISOString().split("T")[0],
-          }),
+          ptoStartDate: startDate.toISOString().split("T")[0],
+          ptoEndDate: endDate.toISOString().split("T")[0],
+          delegateId: delegateUser.id,
+          note: note.trim(),
         }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Failed to update PTO status");
+        throw new Error(data.error || "Failed to assign delegate");
       }
 
-      toast.success(`PTO updated for ${fullName}`);
+      toast.success(`Delegate assigned for ${fullName}`);
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error("Error updating PTO:", error);
+      console.error("Error assigning delegate:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to update PTO status"
+        error instanceof Error ? error.message : "Failed to assign delegate"
       );
     } finally {
       setIsLoading(false);
     }
   };
 
+  const isSubmitDisabled =
+    isLoading || !startDate || !endDate || !delegateUser || !note.trim();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>Assign Delegate</DialogTitle>
           <DialogDescription>
-            {isMarkingPTO
-              ? `Mark ${fullName} as on PTO. This is a visual flag only — the user's access will not be changed.`
-              : `Remove PTO flag from ${fullName}. Their status will return to normal.`}
+            {`Assign a delegate to cover for ${fullName} during their PTO absence.`}
           </DialogDescription>
         </DialogHeader>
 
-        {isMarkingPTO && (
-          <div className="space-y-4 py-4">
+        <div className="space-y-4 py-4">
+            {/* Delegate to */}
+            <div className="space-y-2">
+              <Label>Delegate to</Label>
+              <div className="relative">
+                {!delegateUser ? (
+                  <>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search for a delegate..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        onFocus={() =>
+                          searchResults.length > 0 && setShowResults(true)
+                        }
+                        className="pl-10"
+                      />
+                    </div>
+
+                    {showResults && searchResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10">
+                        <div className="max-h-[200px] overflow-y-auto">
+                          {searchResults.map((result) => (
+                            <button
+                              key={result.id}
+                              onClick={() => handleSelectDelegate(result)}
+                              className="w-full text-left px-3 py-2 hover:bg-muted"
+                            >
+                              <div className="font-medium text-sm">
+                                {result.profile.firstName}{" "}
+                                {result.profile.lastName}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {result.profile.email}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {showResults && searchResults.length === 0 && searchQuery.trim() && !isSearching && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10 p-3 text-sm text-muted-foreground">
+                        No users found
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between p-2 bg-muted rounded">
+                    <div className="text-sm">
+                      <div className="font-medium">
+                        {delegateUser.profile.firstName}{" "}
+                        {delegateUser.profile.lastName}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {delegateUser.profile.email}
+                      </div>
+                    </div>
+                    <button onClick={handleClearDelegate}>
+                      <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Start Date */}
             <div className="space-y-2">
-              <Label htmlFor="start-date">Start Date</Label>
+              <Label>Start Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -121,7 +243,9 @@ export function PTODialog({
                       !startDate && "text-muted-foreground"
                     )}
                   >
-                    {startDate ? formatDate(startDate.toISOString()) : "Pick a date"}
+                    {startDate
+                      ? formatDate(startDate.toISOString())
+                      : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -129,6 +253,7 @@ export function PTODialog({
                     mode="single"
                     selected={startDate}
                     onSelect={setStartDate}
+                    disabled={{ before: tomorrow }}
                   />
                 </PopoverContent>
               </Popover>
@@ -136,7 +261,7 @@ export function PTODialog({
 
             {/* End Date */}
             <div className="space-y-2">
-              <Label htmlFor="end-date">End Date</Label>
+              <Label>End Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -146,7 +271,9 @@ export function PTODialog({
                       !endDate && "text-muted-foreground"
                     )}
                   >
-                    {endDate ? formatDate(endDate.toISOString()) : "Pick a date"}
+                    {endDate
+                      ? formatDate(endDate.toISOString())
+                      : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -158,8 +285,17 @@ export function PTODialog({
                 </PopoverContent>
               </Popover>
             </div>
+
+            {/* Note */}
+            <div className="space-y-2">
+              <Label>Note</Label>
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={3}
+              />
+            </div>
           </div>
-        )}
 
         <DialogFooter className="gap-2">
           <Button
@@ -169,11 +305,8 @@ export function PTODialog({
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading || (isMarkingPTO && (!startDate || !endDate))}
-          >
-            {isLoading ? "Processing..." : title}
+          <Button onClick={handleSubmit} disabled={isSubmitDisabled}>
+            {isLoading ? "Processing..." : "Assign Delegate"}
           </Button>
         </DialogFooter>
       </DialogContent>

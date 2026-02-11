@@ -79,7 +79,7 @@ export function TeamMemberCard({ user }: TeamMemberCardProps) {
             </Button>
           </Link>
           <Button variant="outline" size="sm">
-            Mark PTO
+            Assign Delegate
           </Button>
         </div>
       </div>

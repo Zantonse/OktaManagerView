@@ -112,6 +112,20 @@ export interface OktaAccessRequest {
   decisionDate?: string;
 }
 
+// Governance - Delegate Appointments (Principal Settings API)
+export interface OktaDelegateAppointment {
+  id: string;
+  delegator: { externalId: string; type: string };
+  delegate: { externalId: string; type: string };
+  startTime: string;
+  endTime: string;
+  note: string;
+  createdBy: string;
+  created: string;
+  lastUpdated: string;
+  lastUpdatedBy: string;
+}
+
 // Governance - Delegates (Beta)
 export interface OktaDelegate {
   id: string;

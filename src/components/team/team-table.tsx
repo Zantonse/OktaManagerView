@@ -250,7 +250,7 @@ export function TeamTable({
                           setPTODialogOpen(true);
                         }}
                       >
-                        {user.profile.onPTO ? "End PTO" : "Mark PTO"}
+                        {user.profile.onPTO ? "End PTO" : "Assign Delegate"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
