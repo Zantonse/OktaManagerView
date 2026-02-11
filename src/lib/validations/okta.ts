@@ -69,3 +69,17 @@ export const accessRequestUpdateSchema = z.object({
 export type AccessRequestUpdateInput = z.infer<
   typeof accessRequestUpdateSchema
 >;
+
+/**
+ * Validation schema for user lifecycle actions (suspend/unsuspend)
+ * POST /api/okta/users/[userId]/lifecycle
+ */
+export const userLifecycleActionSchema = z.object({
+  action: z.enum(["suspend", "unsuspend"], {
+    message: "action must be 'suspend' or 'unsuspend'",
+  }),
+});
+
+export type UserLifecycleActionInput = z.infer<
+  typeof userLifecycleActionSchema
+>;

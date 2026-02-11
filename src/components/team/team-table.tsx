@@ -24,6 +24,8 @@ import { OktaUser, OktaDelegateAppointment } from "@/types/okta";
 import { MoreHorizontal, ArrowUpDown, Users } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils/date";
 import { PTODialog } from "./pto-dialog";
+import { EndPTODialog } from "./end-pto-dialog";
+import { LifecycleDialog } from "./lifecycle-dialog";
 
 type SortField = "name" | "email" | "status" | "lastLogin";
 type SortDirection = "asc" | "desc";
@@ -90,6 +92,12 @@ export function TeamTable({
   const [ptoDialogOpen, setPTODialogOpen] = useState(false);
   const [selectedUserForPTO, setSelectedUserForPTO] = useState<OktaUser | null>(null);
   const [selectedUserDelegates, setSelectedUserDelegates] = useState<OktaDelegateAppointment[]>([]);
+  const [endPTODialogOpen, setEndPTODialogOpen] = useState(false);
+  const [selectedUserForEndPTO, setSelectedUserForEndPTO] = useState<OktaUser | null>(null);
+  const [selectedDelegateForEnd, setSelectedDelegateForEnd] = useState<OktaDelegateAppointment | null>(null);
+  const [lifecycleDialogOpen, setLifecycleDialogOpen] = useState(false);
+  const [lifecycleUser, setLifecycleUser] = useState<OktaUser | null>(null);
+  const [lifecycleAction, setLifecycleAction] = useState<"suspend" | "unsuspend">("suspend");
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -278,8 +286,43 @@ export function TeamTable({
                           setPTODialogOpen(true);
                         }}
                       >
-                        {user.profile.onPTO ? "End PTO" : hasDelegate ? "Update Delegate" : "Assign Delegate"}
+                        {hasDelegate ? "Update Delegate" : "Assign Delegate"}
                       </DropdownMenuItem>
+                      {hasDelegate && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedUserForEndPTO(user);
+                            setSelectedDelegateForEnd(userDelegates[0]);
+                            setEndPTODialogOpen(true);
+                          }}
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                        >
+                          End PTO
+                        </DropdownMenuItem>
+                      )}
+                      {user.status === "ACTIVE" && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setLifecycleUser(user);
+                            setLifecycleAction("suspend");
+                            setLifecycleDialogOpen(true);
+                          }}
+                          className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                        >
+                          Suspend User
+                        </DropdownMenuItem>
+                      )}
+                      {user.status === "SUSPENDED" && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setLifecycleUser(user);
+                            setLifecycleAction("unsuspend");
+                            setLifecycleDialogOpen(true);
+                          }}
+                        >
+                          Reactivate User
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -295,6 +338,32 @@ export function TeamTable({
           existingDelegates={selectedUserDelegates}
           open={ptoDialogOpen}
           onOpenChange={setPTODialogOpen}
+          onSuccess={() => {
+            onPTOSuccess?.();
+          }}
+        />
+      )}
+
+      {selectedUserForEndPTO && selectedDelegateForEnd && (
+        <EndPTODialog
+          userName={`${selectedUserForEndPTO.profile.firstName} ${selectedUserForEndPTO.profile.lastName}`}
+          delegate={selectedDelegateForEnd}
+          userId={selectedUserForEndPTO.id}
+          open={endPTODialogOpen}
+          onOpenChange={setEndPTODialogOpen}
+          onSuccess={() => {
+            onPTOSuccess?.();
+          }}
+        />
+      )}
+
+      {lifecycleUser && (
+        <LifecycleDialog
+          userId={lifecycleUser.id}
+          userName={`${lifecycleUser.profile.firstName} ${lifecycleUser.profile.lastName}`}
+          action={lifecycleAction}
+          open={lifecycleDialogOpen}
+          onOpenChange={setLifecycleDialogOpen}
           onSuccess={() => {
             onPTOSuccess?.();
           }}

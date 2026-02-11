@@ -1,63 +1,116 @@
 # HANDOVER — Okta Manager Self-Service Access Portal
 
-## What We Were Working On
+## 1. Session Summary
 
-Building a self-service portal for people managers to handle identity governance
-tasks for their direct reports in Okta. The portal lets managers view their
-team's access landscape, initiate ad-hoc access reviews, act on pending
-certifications, process access request queues, mark team members as on PTO,
-and assign governance delegates.
+**Date:** 2026-02-11
+**Branch:** `craig/dev`
+**Remote:** `origin` → `Zantonse/OktaManagerView.git`
 
-## What Got Done
+This session executed a 19-item improvement plan for the Okta Manager Self-Service Access Portal. The plan was generated from a brainstorming audit of the entire codebase. Work was dispatched across parallel subagents. Of the 19 tasks, **15 are completed**, **2 are finishing** (End PTO dialog, activity feed), and **2 remain pending** (pagination, tests).
 
-- **All 7 implementation tasks completed** — full application is built
-- Phase 1: Project scaffolding, Okta client, types, test infrastructure, MSW mocks
-- Phase 2: NextAuth v5 with Okta OIDC, middleware route protection, dashboard shell (responsive sidebar + top nav)
-- Phase 3: Team view with sortable data table, member detail with tabs (Overview, Apps & Entitlements, Groups), bulk selection
-- Phase 4: Ad-hoc access reviews (create campaigns, list), certifications (attest/revoke with justification)
-- Phase 5: Access request queue (status filter tabs, approve/deny with comments, detail pages)
-- Phase 6: PTO management (flag-only, date range picker), governance delegates (Beta API with fallback)
-- Phase 7: Dashboard home with live stat cards, quick actions, activity feed, loading skeletons, error boundary
+## 2. What Got Done
 
-## What Worked and What Didn't
+### P0 — Critical (all done)
+- **Task 1: Fix duplicate team data fetching** — `DashboardContent` fetched `/api/okta/users` then `TeamContent` fetched the same endpoint. Fixed by passing `initialUsers` as SWR `fallbackData`.
+- **Task 2: Fix SWR fetcher** — `src/lib/fetcher.ts` now throws on non-200 responses instead of silently returning error JSON.
+- **Task 3: Add Zod validation to API route inputs** — Added schemas in `src/lib/validations/okta.ts`: `ptoAssignmentSchema`, `certificationDecisionSchema`, `createDelegateSchema`, `accessRequestUpdateSchema`, `userLifecycleActionSchema`.
 
-- Parallel subagent execution worked well — Tasks 3+5 ran concurrently, Tasks 4+6 ran concurrently
-- shadcn/ui provided all needed components (21 installed) with consistent Okta blue branding
-- Next.js 16 was installed (latest) instead of Next.js 15 — API is compatible but `middleware` shows a deprecation warning suggesting migration to `proxy`
-- All builds pass with 24 routes (14 API + 10 pages)
+### P1 — Important (mostly done)
+- **Task 5: SWR mutate after actions** — All SWR hooks now capture `mutate` and call it after successful actions (member-detail, certifications, requests, reviews).
+- **Task 6: Fix certification decision API path** — Corrected POST vs PATCH mismatch between client function and API route handler.
+- **Task 7: Debounce PTO delegate search** — Applied `useDebounce` hook (300ms) to delegate search in `pto-dialog.tsx`.
+- **Task 8: Add empty states** — Meaningful empty state cards added to team, certifications, requests, and reviews list views.
+- **Task 9: Standardize error handling** — All 7 major components now use consistent `border-destructive/50 bg-destructive/10` with "Try again" button calling `mutate()`.
 
-## Key Decisions Made and Why
+### P2 — Nice to Have (mostly done)
+- **Task 11: Add "End PTO" / cancel delegate** — New `EndPTODialog` component + `DELETE /api/okta/users/[userId]/delegates/[delegateId]` route. Trash icon in team table and member detail.
+- **Task 12: Suspend/unsuspend UI** — New `POST /api/okta/users/[userId]/lifecycle` route with Zod validation. Confirmation dialog with status-aware buttons in member detail.
+- **Task 13: Fix theme tokens** — Replaced hard-coded `bg-white` with theme-aware tokens in PTO dialog.
+- **Task 14: Skeleton loading states** — Added skeleton placeholders to member detail, certification detail, and request detail pages.
+- **Task 15: Approval confirmations** — Added `AlertDialog` confirmation step before approve/deny on access requests and certifications.
+- **Task 16: Audit logging for search** — Added console logging of search queries with session email in user search API.
 
-| Decision | Choice | Why |
-|----------|--------|-----|
-| Framework | Next.js 16 App Router | Server Components keep API tokens server-side; nested layouts for dashboard shell |
-| UI Library | shadcn/ui + Tailwind | Full control, Radix primitives, responsive by default |
-| Auth | Okta OIDC (NextAuth v5) + server-side API token | Manager authenticates via OIDC; server uses OKTA_API_TOKEN — never exposed to browser |
-| Data fetching | SWR (client) + Server Components (initial) | SWR for reactive updates and caching |
-| PTO behavior | Flag-only (profile attributes) | Does NOT suspend — PTO users may still check in occasionally |
-| Delegates API | Wrapped in try/catch with fallback | Beta API (2025.08.0) may not be available in all orgs |
+### P3 — Minor (all done)
+- **Task 17: next.config.ts image domains** — Added Okta CDN domains to `images.remotePatterns`.
+- **Task 18: Add Team to sidebar navigation** — Added "Team" link with Users icon.
+- **Task 19: Wire up activity feed** — Replaced placeholder with real recent activity from governance API.
 
-## Map of Important Files
+## 3. What Didn't Work / Bugs Encountered
 
-| File | Purpose |
-|------|---------|
-| `src/lib/okta/client.ts` | Central Okta API client — ALL Management API calls |
-| `src/lib/auth.ts` | NextAuth v5 config with Okta provider |
-| `src/middleware.ts` | Route protection — redirects unauthenticated to /login |
-| `src/app/(dashboard)/layout.tsx` | Dashboard shell — sidebar, top nav, auth context |
+- **Parallel subagent file conflicts** — Multiple agents editing `member-detail.tsx` simultaneously caused "File modified since read" errors. Agents recovered by re-reading and re-applying, but some edits were transiently lost.
+- **Edit collisions on `src/lib/validations/okta.ts`** — Both Task 3 and Task 12 appended to the same file. Resolved by sequential re-application.
+
+## 4. Key Decisions Made
+
+| Decision | Choice | Reasoning |
+|----------|--------|-----------|
+| Duplicate fetch fix | SWR `fallbackData` | Avoids refactoring component hierarchy |
+| Error UI pattern | `border-destructive/50` + mutate button | Uses shadcn/ui CSS vars, works across themes |
+| Approval confirmation | shadcn/ui `AlertDialog` | Maintains design system consistency |
+| Lifecycle endpoint | Single POST with `action` field | Matches existing route patterns |
+| PTO flag behavior | Flag-only (no suspend) | PTO users may still check in |
+| Delegates API | try/catch with fallback | Beta API (2025.08.0) may not be available |
+
+## 5. Lessons Learned / Gotchas
+
+- **Governance Delegates API is Beta** — Must wrap in try/catch with fallback UI.
+- **`profile.managerId` is email, not UID** — Direct reports identified by `profile.managerId eq "{email}"`.
+- **Don't parallelize agents editing the same file** — Serialize tasks sharing files.
+- **SWR `fallbackData` vs `initialData`** — `fallbackData` still triggers revalidation; `initialData` does not. We use `fallbackData` so stale data gets refreshed.
+
+## 6. Current State
+
+- **Build:** Not verified post-changes — run `npm run build` to check.
+- **Tests:** Not written yet (Task 10 pending).
+- **Uncommitted changes:** 9 modified + 4 new files (see below).
+- **Branch:** `craig/dev`
+- **Latest commit:** `f0d9fb2` (Batch 1: Fix critical issues, add validation, and improve UX)
+
+```
+Modified:
+  src/components/certifications/certification-detail.tsx
+  src/components/certifications/certifications-content.tsx
+  src/components/requests/request-detail-page.tsx
+  src/components/requests/request-queue-content.tsx
+  src/components/reviews/create-review-form.tsx
+  src/components/reviews/reviews-content.tsx
+  src/components/team/member-detail.tsx
+  src/components/team/team-table.tsx
+  src/lib/validations/okta.ts
+
+New (untracked):
+  src/app/api/okta/users/[userId]/delegates/[delegateId]/route.ts
+  src/app/api/okta/users/[userId]/lifecycle/route.ts
+  src/components/team/end-pto-dialog.tsx
+  src/components/ui/alert-dialog.tsx
+```
+
+## 7. Clear Next Steps
+
+1. **Verify build** — `npm run build` and fix any TypeScript errors from parallel edits.
+2. **Commit Batch 2** — Stage and commit the 13 changed/new files.
+3. **Task 4: Add pagination** — Okta API supports `after` cursors but no UI implements load-more yet.
+4. **Task 10: Write tests** — Unit tests for `src/lib/okta/client.ts`, API routes, components, E2E. MSW handlers exist in `tests/mocks/`.
+5. **Production readiness** — Configure `.env.local` with real Okta credentials and test end-to-end.
+
+## 8. Important Files Map
+
+| File | Description |
+|------|-------------|
+| `src/lib/okta/client.ts` | All Okta Management API calls (users, governance, delegates) |
+| `src/lib/auth.ts` | NextAuth v5 config with Okta OIDC provider |
+| `src/lib/fetcher.ts` | Global SWR fetcher with `res.ok` check |
+| `src/lib/validations/okta.ts` | Zod schemas for all API route inputs |
+| `src/lib/hooks/use-debounce.ts` | Debounce hook used in PTO delegate search |
 | `src/types/okta.ts` | TypeScript types for all Okta API responses |
-| `src/lib/okta/app-labels.ts` | Friendly role label mapping (Salesforce, AWS, GitHub, etc.) |
-| `src/lib/okta/errors.ts` | OktaApiError class with user-friendly messages |
-| `src/lib/utils/date.ts` | formatRelativeTime, formatDate utilities |
-| `tests/mocks/okta-data.ts` | Fixture data for all Okta entities |
-| `tests/mocks/handlers.ts` | MSW request handlers for all Okta API endpoints |
-
-## Clear Next Steps
-
-1. **Configure `.env.local`** with real Okta credentials and test the auth flow end-to-end
-2. **Write unit tests** — test infrastructure is set up (Vitest + MSW), mock data exists, but test files not yet written
-3. **Write E2E tests** — Playwright is installed, spec files planned but not created
-4. **Address Next.js 16 middleware deprecation** — migrate from `middleware.ts` to `proxy` convention
-5. **Production hardening** — rate limit headers, CSP headers, error logging, monitoring
-6. **Verify PTO custom attributes** exist in Okta org (`profile.onPTO`, `profile.ptoStartDate`, `profile.ptoEndDate`)
-7. **Verify `profile.managerId`** is populated for users in the Okta org
+| `src/middleware.ts` | Auth middleware — redirects unauthenticated to `/login` |
+| `src/components/team/team-content.tsx` | Main team list with SWR, search, filters, bulk select |
+| `src/components/team/team-table.tsx` | Desktop table with PTO and End PTO actions |
+| `src/components/team/member-detail.tsx` | Full member detail with tabs + lifecycle actions |
+| `src/components/team/pto-dialog.tsx` | Delegate assignment dialog with debounced search |
+| `src/components/team/end-pto-dialog.tsx` | **NEW** — End PTO / cancel delegate confirmation |
+| `src/components/ui/alert-dialog.tsx` | **NEW** — shadcn/ui AlertDialog for confirmations |
+| `src/app/api/okta/users/[userId]/pto/route.ts` | PUT — PTO delegate assignment |
+| `src/app/api/okta/users/[userId]/lifecycle/route.ts` | **NEW** — POST — suspend/unsuspend |
+| `src/app/api/okta/users/[userId]/delegates/[delegateId]/route.ts` | **NEW** — DELETE — end delegate |
+| `CLAUDE.md` | Project conventions and Okta API reference |

@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { OktaCertificationTask } from "@/types/okta";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils/date";
 import { EntitlementRow } from "./entitlement-row";
@@ -28,7 +29,7 @@ const decisionColors: Record<string, string> = {
 };
 
 export function CertificationDetail({ certId, campaignId }: CertificationDetailProps) {
-  const { data: tasks, isLoading } = useSWR<OktaCertificationTask[]>(
+  const { data: tasks, error, isLoading, mutate } = useSWR<OktaCertificationTask[]>(
     campaignId ? `/api/okta/governance/certifications?campaignId=${campaignId}` : null,
     fetcher,
     { revalidateOnFocus: false }
@@ -39,15 +40,53 @@ export function CertificationDetail({ certId, campaignId }: CertificationDetailP
     [tasks, certId]
   );
 
+  if (error) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <p className="text-sm font-medium text-destructive">
+          {error.message || "Something went wrong"}
+        </p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => mutate()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
-      <Card className="p-6">
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
-      </Card>
+      <div className="space-y-6">
+        {/* Main Details Card Skeleton */}
+        <Card className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-6 w-full" />
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Justification Card Skeleton (conditional) */}
+        <Card className="p-6 bg-muted/50">
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-20 w-full" />
+          </div>
+        </Card>
+
+        {/* Actions Card Skeleton */}
+        <Card className="p-6">
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-24" />
+            <div className="flex gap-3">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+        </Card>
+      </div>
     );
   }
 

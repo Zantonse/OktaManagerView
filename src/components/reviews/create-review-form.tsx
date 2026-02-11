@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { fetcher } from "@/lib/fetcher";
 
@@ -32,7 +33,7 @@ export function CreateReviewForm() {
   }, []);
 
   // Fetch users list
-  const { data: users = [], isLoading: isLoadingUsers } = useSWR(
+  const { data: users = [], error: usersError, isLoading: isLoadingUsers, mutate: mutateUsers } = useSWR(
     "/api/okta/users",
     fetcher,
     { revalidateOnFocus: false }
@@ -135,7 +136,16 @@ export function CreateReviewForm() {
             </p>
           </div>
 
-          {isLoadingUsers ? (
+          {usersError ? (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+              <p className="text-sm font-medium text-destructive">
+                {usersError.message || "Something went wrong"}
+              </p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => mutateUsers()}>
+                Try again
+              </Button>
+            </div>
+          ) : isLoadingUsers ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-6 bg-muted rounded animate-pulse" />

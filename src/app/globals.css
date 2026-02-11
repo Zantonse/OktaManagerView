@@ -116,6 +116,66 @@
   --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
+/* Easter egg color themes — light overrides */
+.theme-midnight {
+  --primary: #7c3aed;
+  --ring: #7c3aed;
+  --sidebar-primary: #7c3aed;
+  --sidebar-ring: #7c3aed;
+  --sidebar-accent: #f0ecf9;
+}
+.theme-ember {
+  --primary: #dc2626;
+  --ring: #dc2626;
+  --sidebar-primary: #dc2626;
+  --sidebar-ring: #dc2626;
+  --sidebar-accent: #fef2f2;
+}
+.theme-forest {
+  --primary: #059669;
+  --ring: #059669;
+  --sidebar-primary: #059669;
+  --sidebar-ring: #059669;
+  --sidebar-accent: #ecfdf5;
+}
+.theme-sunset {
+  --primary: #ea580c;
+  --ring: #ea580c;
+  --sidebar-primary: #ea580c;
+  --sidebar-ring: #ea580c;
+  --sidebar-accent: #fff7ed;
+}
+
+/* Easter egg color themes — dark overrides */
+.dark.theme-midnight {
+  --primary: #a78bfa;
+  --ring: #a78bfa;
+  --sidebar-primary: #a78bfa;
+  --sidebar-ring: #a78bfa;
+  --sidebar-accent: oklch(0.28 0.03 290);
+}
+.dark.theme-ember {
+  --primary: #f87171;
+  --ring: #f87171;
+  --sidebar-primary: #f87171;
+  --sidebar-ring: #f87171;
+  --sidebar-accent: oklch(0.28 0.03 25);
+}
+.dark.theme-forest {
+  --primary: #34d399;
+  --ring: #34d399;
+  --sidebar-primary: #34d399;
+  --sidebar-ring: #34d399;
+  --sidebar-accent: oklch(0.28 0.03 165);
+}
+.dark.theme-sunset {
+  --primary: #fb923c;
+  --ring: #fb923c;
+  --sidebar-primary: #fb923c;
+  --sidebar-ring: #fb923c;
+  --sidebar-accent: oklch(0.28 0.03 55);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,9 +18,15 @@ import Link from "next/link";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetcher } from "@/lib/fetcher";
+import { ChevronDown, ArrowLeftRight } from "lucide-react";
 
 interface DelegatesBulkResponse {
   appointments: OktaDelegateAppointment[];
+}
+
+interface UsersResponse {
+  data: OktaUser[];
+  nextCursor?: string;
 }
 
 interface TeamContentProps {
@@ -31,6 +37,9 @@ export function TeamContent({ initialUsers }: TeamContentProps) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [allUsers, setAllUsers] = useState<OktaUser[]>(initialUsers ?? []);
+  const [nextCursor, setNextCursor] = useState<string | undefined>();
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
   // Build query params
@@ -41,17 +50,25 @@ export function TeamContent({ initialUsers }: TeamContentProps) {
 
   // SWR configuration: use fallbackData to prevent redundant fetches when initialUsers is provided
   const swrOptions = initialUsers
-    ? { revalidateOnFocus: false, fallbackData: initialUsers }
+    ? { revalidateOnFocus: false, fallbackData: { data: initialUsers } }
     : { revalidateOnFocus: false };
 
-  const { data, error, isLoading, mutate } = useSWR<OktaUser[]>(
+  const { data, error, isLoading, mutate } = useSWR<UsersResponse>(
     `/api/okta/users?${queryParams.toString()}`,
     fetcher,
     swrOptions
   );
 
+  // Update allUsers and nextCursor when data changes (e.g., on filter change)
+  useEffect(() => {
+    if (data?.data) {
+      setAllUsers(data.data);
+      setNextCursor(data.nextCursor);
+    }
+  }, [data]);
+
   // Fetch delegate appointments for all loaded users
-  const userIds = useMemo(() => data?.map((u) => u.id) ?? [], [data]);
+  const userIds = useMemo(() => allUsers?.map((u) => u.id) ?? [], [allUsers]);
   const delegatesKey = userIds.length > 0
     ? `/api/okta/governance/delegates/bulk?userIds=${userIds.join(",")}`
     : null;
@@ -75,12 +92,12 @@ export function TeamContent({ initialUsers }: TeamContentProps) {
   }, [delegatesData]);
 
   const handleSelectAll = useCallback((checked: boolean) => {
-    if (checked && data) {
-      setSelectedUsers(new Set(data.map((u) => u.id)));
+    if (checked && allUsers) {
+      setSelectedUsers(new Set(allUsers.map((u) => u.id)));
     } else {
       setSelectedUsers(new Set());
     }
-  }, [data]);
+  }, [allUsers]);
 
   const handleSelectUser = useCallback((userId: string, checked: boolean) => {
     setSelectedUsers((prev) => {
@@ -93,6 +110,30 @@ export function TeamContent({ initialUsers }: TeamContentProps) {
       return newSet;
     });
   }, []);
+
+  const handleLoadMore = useCallback(async () => {
+    if (!nextCursor) return;
+
+    setIsLoadingMore(true);
+    try {
+      const queryParams = new URLSearchParams();
+      if (debouncedSearch) queryParams.set("search", debouncedSearch);
+      if (status !== "all") queryParams.set("status", status);
+      queryParams.set("limit", "200");
+      queryParams.set("after", nextCursor);
+
+      const response = await fetch(`/api/okta/users?${queryParams.toString()}`);
+      if (!response.ok) throw new Error("Failed to load more users");
+
+      const result: UsersResponse = await response.json();
+      setAllUsers((prev) => [...prev, ...result.data]);
+      setNextCursor(result.nextCursor);
+    } catch (err) {
+      console.error("Error loading more users:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [nextCursor, debouncedSearch, status]);
 
   const selectedUserIds = Array.from(selectedUsers).join(",");
   const showFloatingBar = selectedUsers.size > 0;
@@ -141,7 +182,7 @@ export function TeamContent({ initialUsers }: TeamContentProps) {
       )}
 
       {/* Empty State */}
-      {!isLoading && (!data || data.length === 0) && (
+      {!isLoading && allUsers.length === 0 && (
         <div className="rounded-lg border border-dashed p-8 text-center">
           <p className="text-sm text-muted-foreground">
             No team members found matching your search criteria.
@@ -150,10 +191,10 @@ export function TeamContent({ initialUsers }: TeamContentProps) {
       )}
 
       {/* Desktop View - Table */}
-      {!isLoading && data && data.length > 0 && (
+      {!isLoading && allUsers.length > 0 && (
         <div className="hidden md:block">
           <TeamTable
-            users={data}
+            users={allUsers}
             selectedUsers={selectedUsers}
             onSelectAll={handleSelectAll}
             onSelectUser={handleSelectUser}
@@ -164,11 +205,35 @@ export function TeamContent({ initialUsers }: TeamContentProps) {
       )}
 
       {/* Mobile View - Cards */}
-      {!isLoading && data && data.length > 0 && (
+      {!isLoading && allUsers.length > 0 && (
         <div className="space-y-3 md:hidden">
-          {data.map((user) => (
+          {allUsers.map((user) => (
             <TeamMemberCard key={user.id} user={user} />
           ))}
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {!isLoading && allUsers.length > 0 && nextCursor && (
+        <div className="flex justify-center pt-4">
+          <Button
+            onClick={handleLoadMore}
+            disabled={isLoadingMore}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            {isLoadingMore ? (
+              <>
+                <span className="animate-spin mr-2">⏳</span>
+                Loading...
+              </>
+            ) : (
+              <>
+                Load More
+                <ChevronDown className="ml-2 size-4" />
+              </>
+            )}
+          </Button>
         </div>
       )}
 
@@ -178,13 +243,21 @@ export function TeamContent({ initialUsers }: TeamContentProps) {
           <p className="text-sm font-medium">
             {selectedUsers.size} selected
           </p>
-          <Link
-            href={`/reviews/create?users=${selectedUserIds}`}
-          >
-            <Button size="sm">
-              Start Review for Selected ({selectedUsers.size})
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {selectedUsers.size === 2 && (
+              <Link href={`/compare?users=${selectedUserIds}`}>
+                <Button size="sm" variant="outline" className="gap-2">
+                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                  Compare Access
+                </Button>
+              </Link>
+            )}
+            <Link href={`/reviews/create?users=${selectedUserIds}`}>
+              <Button size="sm">
+                Start Review ({selectedUsers.size})
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </div>

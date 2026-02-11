@@ -87,6 +87,74 @@ async function oktaFetch<T>(path: string, options: FetchOptions = {}): Promise<T
   return response.json();
 }
 
+// Fetch with headers returned (for pagination cursor extraction)
+async function oktaFetchWithHeaders<T>(path: string, options: FetchOptions = {}): Promise<{ data: T; headers: Headers }> {
+  const { method = 'GET', body, params, headers = {} } = options;
+
+  if (!OKTA_DOMAIN) throw new Error('OKTA_DOMAIN is not configured');
+  if (!OKTA_API_TOKEN) throw new Error('OKTA_API_TOKEN is not configured');
+
+  const url = buildUrl(path, params);
+
+  const fetchOptions: RequestInit = {
+    method,
+    headers: {
+      'Authorization': `SSWS ${OKTA_API_TOKEN}`,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+  };
+
+  if (body) {
+    fetchOptions.body = JSON.stringify(body);
+  }
+
+  let response: Response;
+  let retries = 0;
+  const maxRetries = 3;
+
+  while (true) {
+    response = await fetch(url, fetchOptions);
+
+    // Handle rate limiting (429)
+    if (response.status === 429 && retries < maxRetries) {
+      const retryAfter = response.headers.get('x-rate-limit-reset');
+      const waitMs = retryAfter
+        ? Math.max(0, (parseInt(retryAfter, 10) * 1000) - Date.now()) + 1000
+        : Math.pow(2, retries) * 1000;
+      await new Promise(resolve => setTimeout(resolve, Math.min(waitMs, 30000)));
+      retries++;
+      continue;
+    }
+
+    break;
+  }
+
+  if (!response.ok) {
+    let errorBody: OktaApiErrorType | undefined;
+    try {
+      errorBody = await response.json();
+    } catch {
+      // Response may not be JSON
+    }
+    throw new OktaApiError(
+      errorBody?.errorSummary || `Okta API error: ${response.status}`,
+      response.status,
+      errorBody?.errorCode,
+      errorBody?.errorCauses?.map(c => c.errorSummary)
+    );
+  }
+
+  // Handle 204 No Content
+  if (response.status === 204) {
+    return { data: undefined as T, headers: response.headers };
+  }
+
+  const data = await response.json();
+  return { data, headers: response.headers };
+}
+
 // Parse Link header for pagination
 function parseLinkHeader(linkHeader: string | null): { after?: string } {
   if (!linkHeader) return {};
@@ -109,6 +177,29 @@ export async function getDirectReports(managerEmail: string, params?: { search?:
       ...(params?.after && { after: params.after }),
     },
   });
+}
+
+export async function getDirectReportsWithPagination(managerEmail: string, params?: { search?: string; status?: string; after?: string; limit?: string }) {
+  const searchFilter = `profile.managerId eq "${managerEmail}"`;
+  const fullSearch = params?.search
+    ? `${searchFilter} and (profile.firstName sw "${params.search}" or profile.lastName sw "${params.search}" or profile.email sw "${params.search}")`
+    : searchFilter;
+
+  const result = await oktaFetchWithHeaders<import('@/types/okta').OktaUser[]>('/api/v1/users', {
+    params: {
+      search: fullSearch,
+      ...(params?.limit && { limit: params.limit }),
+      ...(params?.after && { after: params.after }),
+    },
+  });
+
+  const linkHeader = result.headers.get('link');
+  const pagination = parseLinkHeader(linkHeader);
+
+  return {
+    data: result.data,
+    nextCursor: pagination.after,
+  };
 }
 
 export async function searchAllUsers(query: string, params?: { limit?: string }) {
@@ -162,11 +253,23 @@ export async function unsuspendUser(userId: string) {
 // ─── Governance - Campaigns ───────────────────────────
 
 export async function getCampaigns(params?: { status?: string; after?: string; limit?: string }) {
-  return oktaFetch<import('@/types/okta').OktaCampaign[]>('/api/v1/campaigns', { params: params as Record<string, string> });
+  return oktaFetch<import('@/types/okta').OktaCampaign[]>('/governance/api/v1/campaigns', { params: params as Record<string, string> });
+}
+
+export async function getCampaignsWithPagination(params?: { status?: string; after?: string; limit?: string }) {
+  const result = await oktaFetchWithHeaders<import('@/types/okta').OktaCampaign[]>('/governance/api/v1/campaigns', { params: params as Record<string, string> });
+
+  const linkHeader = result.headers.get('link');
+  const pagination = parseLinkHeader(linkHeader);
+
+  return {
+    data: result.data,
+    nextCursor: pagination.after,
+  };
 }
 
 export async function createCampaign(campaign: { name: string; description?: string; scheduledStartDate?: string; deadline?: string; resourceSets?: unknown[] }) {
-  return oktaFetch<import('@/types/okta').OktaCampaign>('/api/v1/campaigns', {
+  return oktaFetch<import('@/types/okta').OktaCampaign>('/governance/api/v1/campaigns', {
     method: 'POST',
     body: campaign,
   });
@@ -200,6 +303,20 @@ export async function getAccessRequests(params?: { status?: string; after?: stri
   return oktaFetch<import('@/types/okta').OktaAccessRequest[]>('/governance/api/v2/requests', {
     params: params as Record<string, string>,
   });
+}
+
+export async function getAccessRequestsWithPagination(params?: { status?: string; after?: string; limit?: string }) {
+  const result = await oktaFetchWithHeaders<import('@/types/okta').OktaAccessRequest[]>('/governance/api/v2/requests', {
+    params: params as Record<string, string>,
+  });
+
+  const linkHeader = result.headers.get('link');
+  const pagination = parseLinkHeader(linkHeader);
+
+  return {
+    data: result.data,
+    nextCursor: pagination.after,
+  };
 }
 
 export async function updateAccessRequest(requestId: string, decision: { status: 'APPROVED' | 'DENIED'; comment?: string }) {

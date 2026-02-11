@@ -7,6 +7,7 @@ import { OktaCertificationTask, OktaCampaign } from "@/types/okta";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CertificationList } from "./certification-list";
 import { CertificationCards } from "./certification-cards";
@@ -20,7 +21,7 @@ export function CertificationsContent() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
 
   // Fetch campaigns
-  const { data: campaigns = [], isLoading: isLoadingCampaigns } = useSWR(
+  const { data: campaigns = [], error: campaignsError, isLoading: isLoadingCampaigns, mutate: mutateCampaigns } = useSWR(
     "/api/okta/governance/campaigns",
     fetcher,
     { revalidateOnFocus: false }
@@ -29,7 +30,7 @@ export function CertificationsContent() {
   const campaignList = Array.isArray(campaigns) ? campaigns : [];
 
   // Fetch certification tasks for selected campaign
-  const { data: tasks = [], isLoading: isLoadingTasks } = useSWR(
+  const { data: tasks = [], error: tasksError, isLoading: isLoadingTasks, mutate: mutateTasks } = useSWR(
     selectedCampaignId ? `/api/okta/governance/certifications?campaignId=${selectedCampaignId}` : null,
     fetcher,
     { revalidateOnFocus: false }
@@ -46,6 +47,32 @@ export function CertificationsContent() {
     setSelectedCampaignId(campaignId);
     setStatusFilter(undefined);
   };
+
+  if (campaignsError) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <p className="text-sm font-medium text-destructive">
+          {campaignsError.message || "Something went wrong"}
+        </p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => mutateCampaigns()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  if (tasksError && selectedCampaignId) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <p className="text-sm font-medium text-destructive">
+          {tasksError.message || "Something went wrong"}
+        </p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => mutateTasks()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   if (!selectedCampaignId && campaignList.length > 0) {
     return (

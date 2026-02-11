@@ -5,15 +5,16 @@ import Link from "next/link";
 import { Session } from "next-auth";
 import {
   LayoutDashboard,
-  Users,
   ClipboardCheck,
-  Award,
   Inbox,
   Settings,
   Shield,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useColorTheme } from "@/lib/hooks/use-color-theme";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface MobileNavProps {
   session: Session | null;
@@ -23,9 +24,7 @@ interface MobileNavProps {
 
 const navigationItems = [
   { href: "/", label: "Home", icon: LayoutDashboard },
-  { href: "/team", label: "Team", icon: Users },
-  { href: "/reviews", label: "Reviews", icon: ClipboardCheck },
-  { href: "/certifications", label: "Certifications", icon: Award },
+  { href: "/reviews", label: "Access Reviews", icon: ClipboardCheck },
   { href: "/requests", label: "Requests", icon: Inbox },
 ];
 
@@ -36,9 +35,18 @@ export function MobileNavSheet({
   onOpenChange,
 }: MobileNavProps) {
   const pathname = usePathname();
+  const { cycleTheme } = useColorTheme();
+  const [spinning, setSpinning] = useState(false);
 
   const handleLinkClick = () => {
     onOpenChange?.(false);
+  };
+
+  const handleLogoClick = () => {
+    setSpinning(true);
+    const next = cycleTheme();
+    toast(next.label, { duration: 1500 });
+    setTimeout(() => setSpinning(false), 500);
   };
 
   return (
@@ -46,9 +54,14 @@ export function MobileNavSheet({
       <SheetContent side="left" className="w-64 p-0 bg-[var(--sidebar)]">
         <SheetHeader className="border-b border-border px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--sidebar-primary)]">
+            <button
+              onClick={handleLogoClick}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--sidebar-primary)] transition-transform duration-500 ease-out"
+              style={spinning ? { transform: "rotate(360deg)" } : undefined}
+              aria-label="Change color theme"
+            >
               <Shield className="h-4 w-4 text-white" />
-            </div>
+            </button>
             <SheetTitle className="text-[15px] font-bold text-foreground">Okta Manager</SheetTitle>
           </div>
         </SheetHeader>

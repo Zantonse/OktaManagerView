@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getDirectReports } from "@/lib/okta/client";
+import { getDirectReportsWithPagination } from "@/lib/okta/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
   const limit = searchParams.get("limit") || "200";
 
   try {
-    const users = await getDirectReports(session.user.email, { search, status, after, limit });
-    return NextResponse.json(users);
+    const { data: users, nextCursor } = await getDirectReportsWithPagination(session.user.email, { search, status, after, limit });
+    return NextResponse.json({ data: users, nextCursor });
   } catch (error) {
     console.error("Error fetching direct reports:", error);
     const statusCode = (error as any)?.statusCode || 500;

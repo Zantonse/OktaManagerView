@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getCampaigns, createCampaign } from "@/lib/okta/client";
+import { getCampaignsWithPagination, createCampaign } from "@/lib/okta/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
   const limit = searchParams.get("limit") || "50";
 
   try {
-    const campaigns = await getCampaigns({ status, after, limit });
-    return NextResponse.json(campaigns);
+    const { data: campaigns, nextCursor } = await getCampaignsWithPagination({ status, after, limit });
+    return NextResponse.json({ data: campaigns, nextCursor });
   } catch (error) {
     console.error("Error fetching campaigns:", error);
     return NextResponse.json(

@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getAccessRequests } from "@/lib/okta/client";
+import { getAccessRequestsWithPagination } from "@/lib/okta/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
   const limit = searchParams.get("limit") || "50";
 
   try {
-    const requests = await getAccessRequests({ status, after, limit });
-    return NextResponse.json(requests);
+    const { data: requests, nextCursor } = await getAccessRequestsWithPagination({ status, after, limit });
+    return NextResponse.json({ data: requests, nextCursor });
   } catch (error) {
     console.error("Error fetching access requests:", error);
     return NextResponse.json(

@@ -1,17 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import useSWR from "swr";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { OktaUser, OktaGroup, OktaDelegateAppointment } from "@/types/okta";
 import { formatDate } from "@/lib/utils/date";
 import { AccessSummary } from "./access-summary";
-import { AlertTriangle, Users } from "lucide-react";
+import { AlertTriangle, Users, Trash2 } from "lucide-react";
 import { fetcher } from "@/lib/fetcher";
+import { EndPTODialog } from "./end-pto-dialog";
+import { LifecycleDialog } from "./lifecycle-dialog";
 
 interface AppWithRole {
   id: string;
@@ -47,25 +50,29 @@ function getStatusColor(status: OktaUser["status"]): string {
 }
 
 export function MemberDetail({ userId }: MemberDetailProps) {
-  const { data: user, error: userError, isLoading: userLoading } = useSWR<OktaUser>(
+  const [endPTODialogOpen, setEndPTODialogOpen] = useState(false);
+  const [selectedDelegateForEnd, setSelectedDelegateForEnd] = useState<OktaDelegateAppointment | null>(null);
+  const [lifecycleDialogOpen, setLifecycleDialogOpen] = useState(false);
+
+  const { data: user, error: userError, isLoading: userLoading, mutate: mutateUser } = useSWR<OktaUser>(
     `/api/okta/users/${userId}`,
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  const { data: apps, isLoading: appsLoading } = useSWR<AppWithRole[]>(
+  const { data: apps, error: appsError, isLoading: appsLoading, mutate: mutateApps } = useSWR<AppWithRole[]>(
     userId ? `/api/okta/users/${userId}/apps` : null,
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  const { data: groups, isLoading: groupsLoading } = useSWR<OktaGroup[]>(
+  const { data: groups, error: groupsError, isLoading: groupsLoading, mutate: mutateGroups } = useSWR<OktaGroup[]>(
     userId ? `/api/okta/users/${userId}/groups` : null,
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  const { data: delegatesData, isLoading: delegatesLoading } = useSWR<{
+  const { data: delegatesData, error: delegatesError, isLoading: delegatesLoading, mutate: mutateDelegates } = useSWR<{
     appointments: OktaDelegateAppointment[];
     warning?: string;
   }>(
@@ -76,10 +83,39 @@ export function MemberDetail({ userId }: MemberDetailProps) {
 
   if (userError) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-        <p className="text-sm font-medium text-red-800">
-          Error loading member details. Please try again.
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <p className="text-sm font-medium text-destructive">
+          {userError.message || "Something went wrong"}
         </p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => mutateUser()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  if (appsError || groupsError) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <p className="text-sm font-medium text-destructive">
+          {appsError?.message || groupsError?.message || "Something went wrong"}
+        </p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => { mutateApps(); mutateGroups(); }}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  if (delegatesError) {
+    return (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <p className="text-sm font-medium text-destructive">
+          {delegatesError.message || "Something went wrong"}
+        </p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={() => mutateDelegates()}>
+          Try again
+        </Button>
       </div>
     );
   }
@@ -150,6 +186,25 @@ export function MemberDetail({ userId }: MemberDetailProps) {
               <Badge className={getStatusColor(user.status)}>
                 {user.status}
               </Badge>
+              {user.status === "ACTIVE" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                  onClick={() => setLifecycleDialogOpen(true)}
+                >
+                  Suspend
+                </Button>
+              )}
+              {user.status === "SUSPENDED" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLifecycleDialogOpen(true)}
+                >
+                  Reactivate
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -336,11 +391,25 @@ export function MemberDetail({ userId }: MemberDetailProps) {
                         <span>Created {formatDate(appointment.created)}</span>
                       </div>
                     </div>
-                    <Badge variant="outline" className="ml-2 shrink-0">
-                      {appointment.delegate.type === "OKTA_USER"
-                        ? "User"
-                        : appointment.delegate.type}
-                    </Badge>
+                    <div className="flex items-center gap-2 ml-2 shrink-0">
+                      <Badge variant="outline">
+                        {appointment.delegate.type === "OKTA_USER"
+                          ? "User"
+                          : appointment.delegate.type}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          setSelectedDelegateForEnd(appointment);
+                          setEndPTODialogOpen(true);
+                        }}
+                        title="End PTO"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -348,6 +417,32 @@ export function MemberDetail({ userId }: MemberDetailProps) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {user && selectedDelegateForEnd && (
+        <EndPTODialog
+          userName={`${user.profile.firstName} ${user.profile.lastName}`}
+          delegate={selectedDelegateForEnd}
+          userId={user.id}
+          open={endPTODialogOpen}
+          onOpenChange={setEndPTODialogOpen}
+          onSuccess={() => {
+            mutateDelegates();
+          }}
+        />
+      )}
+
+      {user && (user.status === "ACTIVE" || user.status === "SUSPENDED") && (
+        <LifecycleDialog
+          userId={user.id}
+          userName={`${user.profile.firstName} ${user.profile.lastName}`}
+          action={user.status === "ACTIVE" ? "suspend" : "unsuspend"}
+          open={lifecycleDialogOpen}
+          onOpenChange={setLifecycleDialogOpen}
+          onSuccess={() => {
+            mutateUser();
+          }}
+        />
+      )}
     </div>
   );
 }
