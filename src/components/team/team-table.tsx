@@ -20,8 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { OktaUser } from "@/types/okta";
-import { MoreHorizontal, ArrowUpDown } from "lucide-react";
+import { OktaUser, OktaDelegateAppointment } from "@/types/okta";
+import { MoreHorizontal, ArrowUpDown, Users } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils/date";
 import { PTODialog } from "./pto-dialog";
 
@@ -33,6 +33,7 @@ interface TeamTableProps {
   selectedUsers: Set<string>;
   onSelectAll: (checked: boolean) => void;
   onSelectUser: (userId: string, checked: boolean) => void;
+  delegatesByUser?: Map<string, OktaDelegateAppointment[]>;
   onPTOSuccess?: () => void;
 }
 
@@ -81,12 +82,14 @@ export function TeamTable({
   selectedUsers,
   onSelectAll,
   onSelectUser,
+  delegatesByUser,
   onPTOSuccess,
 }: TeamTableProps) {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [ptoDialogOpen, setPTODialogOpen] = useState(false);
   const [selectedUserForPTO, setSelectedUserForPTO] = useState<OktaUser | null>(null);
+  const [selectedUserDelegates, setSelectedUserDelegates] = useState<OktaDelegateAppointment[]>([]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -184,12 +187,15 @@ export function TeamTable({
                 <SortIcon field="lastLogin" />
               </div>
             </TableHead>
+            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Delegate</TableHead>
             <TableHead className="w-10"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedUsers.map((user) => {
             const fullName = `${user.profile.firstName} ${user.profile.lastName}`;
+            const userDelegates = delegatesByUser?.get(user.id) ?? [];
+            const hasDelegate = userDelegates.length > 0;
             return (
               <TableRow key={user.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
                 <TableCell>
@@ -233,6 +239,27 @@ export function TeamTable({
                   {formatRelativeTime(user.lastLogin)}
                 </TableCell>
                 <TableCell>
+                  {hasDelegate ? (
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                      <div className="min-w-0">
+                        <span className="text-[13px] text-foreground font-medium truncate block max-w-[140px]">
+                          {userDelegates[0].delegateName && userDelegates[0].delegateName !== "- -"
+                            ? userDelegates[0].delegateName
+                            : userDelegates[0].delegateEmail || userDelegates[0].delegate.externalId}
+                        </span>
+                        {userDelegates[0].delegateEmail && userDelegates[0].delegateName && userDelegates[0].delegateName !== "- -" && (
+                          <span className="text-[11px] text-muted-foreground truncate block max-w-[140px]">
+                            {userDelegates[0].delegateEmail}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-[13px] text-muted-foreground">None</span>
+                  )}
+                </TableCell>
+                <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -247,10 +274,11 @@ export function TeamTable({
                       <DropdownMenuItem
                         onClick={() => {
                           setSelectedUserForPTO(user);
+                          setSelectedUserDelegates(userDelegates);
                           setPTODialogOpen(true);
                         }}
                       >
-                        {user.profile.onPTO ? "End PTO" : "Assign Delegate"}
+                        {user.profile.onPTO ? "End PTO" : hasDelegate ? "Update Delegate" : "Assign Delegate"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -264,6 +292,7 @@ export function TeamTable({
       {selectedUserForPTO && (
         <PTODialog
           user={selectedUserForPTO}
+          existingDelegates={selectedUserDelegates}
           open={ptoDialogOpen}
           onOpenChange={setPTODialogOpen}
           onSuccess={() => {

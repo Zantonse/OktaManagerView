@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OktaUser, OktaGroup } from "@/types/okta";
+import { OktaUser, OktaGroup, OktaDelegateAppointment } from "@/types/okta";
 import { formatDate } from "@/lib/utils/date";
 import { AccessSummary } from "./access-summary";
+import { AlertTriangle, Users } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -61,6 +62,15 @@ export function MemberDetail({ userId }: MemberDetailProps) {
 
   const { data: groups, isLoading: groupsLoading } = useSWR<OktaGroup[]>(
     userId ? `/api/okta/users/${userId}/groups` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  const { data: delegatesData, isLoading: delegatesLoading } = useSWR<{
+    appointments: OktaDelegateAppointment[];
+    warning?: string;
+  }>(
+    userId ? `/api/okta/users/${userId}/delegates` : null,
     fetcher,
     { revalidateOnFocus: false }
   );
@@ -148,10 +158,11 @@ export function MemberDetail({ userId }: MemberDetailProps) {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="apps">Apps & Entitlements</TabsTrigger>
           <TabsTrigger value="groups">Groups</TabsTrigger>
+          <TabsTrigger value="delegates">Delegates</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -253,6 +264,84 @@ export function MemberDetail({ userId }: MemberDetailProps) {
                       )}
                     </div>
                     <Badge variant="outline">{group.type}</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </TabsContent>
+
+        {/* Delegates Tab */}
+        <TabsContent value="delegates">
+          <Card className="p-6">
+            {delegatesLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : delegatesData?.warning ? (
+              <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg flex gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-yellow-800 font-medium">
+                    API Not Available
+                  </p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    {delegatesData.warning}
+                  </p>
+                </div>
+              </div>
+            ) : !delegatesData?.appointments ||
+              delegatesData.appointments.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-8 text-center">
+                <Users className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  No delegate appointments for this user.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {delegatesData.appointments.map((appointment) => (
+                  <div
+                    key={appointment.id}
+                    className="flex items-start justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm">
+                        {appointment.delegateName ||
+                          appointment.delegate.externalId}
+                      </p>
+                      {appointment.delegateEmail && (
+                        <p className="text-xs text-muted-foreground truncate">
+                          {appointment.delegateEmail}
+                        </p>
+                      )}
+                      {appointment.note && (
+                        <p className="text-xs text-muted-foreground mt-1 italic">
+                          {appointment.note}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                        {(appointment.startTime || appointment.endTime) && (
+                          <span>
+                            {appointment.startTime
+                              ? formatDate(appointment.startTime)
+                              : "No start"}{" "}
+                            &mdash;{" "}
+                            {appointment.endTime
+                              ? formatDate(appointment.endTime)
+                              : "No end"}
+                          </span>
+                        )}
+                        <span>Created {formatDate(appointment.created)}</span>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="ml-2 shrink-0">
+                      {appointment.delegate.type === "OKTA_USER"
+                        ? "User"
+                        : appointment.delegate.type}
+                    </Badge>
                   </div>
                 ))}
               </div>

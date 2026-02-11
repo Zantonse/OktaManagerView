@@ -13,10 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { TeamTable } from "./team-table";
 import { TeamMemberCard } from "./team-member-card";
-import { OktaUser } from "@/types/okta";
+import { OktaUser, OktaDelegateAppointment } from "@/types/okta";
 import Link from "next/link";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
+
+interface DelegatesBulkResponse {
+  appointments: OktaDelegateAppointment[];
+}
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -37,6 +41,30 @@ export function TeamContent() {
     fetcher,
     { revalidateOnFocus: false }
   );
+
+  // Fetch delegate appointments for all loaded users
+  const userIds = useMemo(() => data?.map((u) => u.id) ?? [], [data]);
+  const delegatesKey = userIds.length > 0
+    ? `/api/okta/governance/delegates/bulk?userIds=${userIds.join(",")}`
+    : null;
+  const { data: delegatesData, mutate: mutateDelegates } = useSWR<DelegatesBulkResponse>(
+    delegatesKey,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  // Build a map: userId -> delegate appointments
+  const delegatesByUser = useMemo(() => {
+    const map = new Map<string, OktaDelegateAppointment[]>();
+    if (delegatesData?.appointments) {
+      for (const appt of delegatesData.appointments) {
+        const uid = appt.delegator.externalId;
+        if (!map.has(uid)) map.set(uid, []);
+        map.get(uid)!.push(appt);
+      }
+    }
+    return map;
+  }, [delegatesData]);
 
   const handleSelectAll = useCallback((checked: boolean) => {
     if (checked && data) {
@@ -121,7 +149,8 @@ export function TeamContent() {
             selectedUsers={selectedUsers}
             onSelectAll={handleSelectAll}
             onSelectUser={handleSelectUser}
-            onPTOSuccess={() => mutate()}
+            delegatesByUser={delegatesByUser}
+            onPTOSuccess={() => { mutate(); mutateDelegates(); }}
           />
         </div>
       )}

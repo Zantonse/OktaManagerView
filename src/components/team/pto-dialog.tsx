@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { OktaUser } from "@/types/okta";
+import { OktaUser, OktaDelegateAppointment } from "@/types/okta";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import { Search, X } from "lucide-react";
 
 interface PTODialogProps {
   user: OktaUser;
+  existingDelegates?: OktaDelegateAppointment[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
@@ -34,6 +35,7 @@ interface PTODialogProps {
 
 export function PTODialog({
   user,
+  existingDelegates,
   open,
   onOpenChange,
   onSuccess,
@@ -41,19 +43,42 @@ export function PTODialog({
   const [isLoading, setIsLoading] = useState(false);
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const existingDelegate = existingDelegates?.[0];
+  const isUpdate = !!existingDelegate;
+
   const [startDate, setStartDate] = useState<Date | undefined>(
-    user.profile.ptoStartDate
-      ? new Date(user.profile.ptoStartDate)
-      : tomorrow
+    existingDelegate?.startTime
+      ? new Date(existingDelegate.startTime)
+      : user.profile.ptoStartDate
+        ? new Date(user.profile.ptoStartDate)
+        : tomorrow
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
-    user.profile.ptoEndDate
-      ? new Date(user.profile.ptoEndDate)
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    existingDelegate?.endTime
+      ? new Date(existingDelegate.endTime)
+      : user.profile.ptoEndDate
+        ? new Date(user.profile.ptoEndDate)
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   );
 
-  // Delegate search state
-  const [delegateUser, setDelegateUser] = useState<OktaUser | null>(null);
+  // Delegate search state — pre-populate from existing delegate
+  const [delegateUser, setDelegateUser] = useState<OktaUser | null>(
+    existingDelegate
+      ? ({
+          id: existingDelegate.delegate.externalId,
+          profile: {
+            firstName: existingDelegate.delegateName?.split(" ")[0] || "",
+            lastName: existingDelegate.delegateName?.split(" ").slice(1).join(" ") || "",
+            email: existingDelegate.delegateEmail || "",
+            login: existingDelegate.delegateEmail || "",
+          },
+          status: "ACTIVE",
+          created: "",
+          lastUpdated: "",
+        } as OktaUser)
+      : null
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<OktaUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -61,7 +86,8 @@ export function PTODialog({
 
   const fullName = `${user.profile.firstName} ${user.profile.lastName}`;
 
-  const defaultNote = `${fullName} is on PTO, and you have been appointed to cover for this duration. Thank you!`;
+  const defaultNote = existingDelegate?.note
+    || `${fullName} is on PTO, and you have been appointed to cover for this duration. Thank you!`;
   const [note, setNote] = useState(defaultNote);
 
   const handleSearch = useCallback(async (query: string) => {
@@ -158,9 +184,11 @@ export function PTODialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Assign Delegate</DialogTitle>
+          <DialogTitle>{isUpdate ? "Update Delegate" : "Assign Delegate"}</DialogTitle>
           <DialogDescription>
-            {`Assign a delegate to cover for ${fullName} during their PTO absence.`}
+            {isUpdate
+              ? `Update the delegate assignment for ${fullName}.`
+              : `Assign a delegate to cover for ${fullName} during their PTO absence.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -306,7 +334,7 @@ export function PTODialog({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitDisabled}>
-            {isLoading ? "Processing..." : "Assign Delegate"}
+            {isLoading ? "Processing..." : isUpdate ? "Update Delegate" : "Assign Delegate"}
           </Button>
         </DialogFooter>
       </DialogContent>

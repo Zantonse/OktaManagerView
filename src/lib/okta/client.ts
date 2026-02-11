@@ -260,6 +260,47 @@ export async function deleteDelegate(delegateId: string) {
   });
 }
 
+// ─── Governance - Delegate Appointments (List) ───────
+
+export async function getDelegateAppointments(userId: string) {
+  try {
+    const response = await oktaFetch<{ data: import('@/types/okta').OktaDelegateAppointment[] }>(
+      '/governance/api/v1/delegates',
+      {
+        params: {
+          filter: `delegatorId eq "${userId}"`,
+          limit: '50',
+        },
+      }
+    );
+    return response.data ?? [];
+  } catch (error) {
+    // Beta API — may not be available
+    console.warn('Delegate Appointments API not available:', error);
+    return [];
+  }
+}
+
+export async function getDelegateAppointmentsBulk(userIds: string[]) {
+  if (userIds.length === 0) return [];
+  try {
+    const filter = userIds.map(id => `delegatorId eq "${id}"`).join(' OR ');
+    const response = await oktaFetch<{ data: import('@/types/okta').OktaDelegateAppointment[] }>(
+      '/governance/api/v1/delegates',
+      {
+        params: {
+          filter: `(${filter})`,
+          limit: '200',
+        },
+      }
+    );
+    return response.data ?? [];
+  } catch (error) {
+    console.warn('Delegate Appointments bulk API not available:', error);
+    return [];
+  }
+}
+
 // ─── Org API ──────────────────────────────────────────
 
 export async function getOrg() {
