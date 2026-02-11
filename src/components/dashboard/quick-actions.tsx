@@ -1,52 +1,39 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, ClipboardCheck, Inbox, Shield } from "lucide-react";
+import { ClipboardCheck, Inbox, Shield } from "lucide-react";
 import Link from "next/link";
 
 export function QuickActions() {
   const actions = [
     {
-      label: "View Team",
-      href: "/team",
-      icon: <Users className="h-4 w-4" />,
-    },
-    {
       label: "Start Review",
       href: "/reviews/create",
-      icon: <ClipboardCheck className="h-4 w-4" />,
+      icon: <ClipboardCheck className="h-3.5 w-3.5" />,
     },
     {
-      label: "View Requests",
+      label: "Requests",
       href: "/requests",
-      icon: <Inbox className="h-4 w-4" />,
+      icon: <Inbox className="h-3.5 w-3.5" />,
     },
     {
-      label: "Manage Delegates",
+      label: "Delegates",
       href: "/settings",
-      icon: <Shield className="h-4 w-4" />,
+      icon: <Shield className="h-3.5 w-3.5" />,
     },
   ];
 
   return (
-    <Card className="border border-border bg-card shadow-sm">
-      <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
-        <CardDescription>Common tasks and shortcuts</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap gap-3">
-          {actions.map((action) => (
-            <Link key={action.href} href={action.href}>
-              <Button variant="outline" size="sm" className="gap-2">
-                {action.icon}
-                {action.label}
-              </Button>
-            </Link>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex flex-wrap gap-2 mt-3 md:mt-0">
+      {actions.map((action) => (
+        <Link
+          key={action.href}
+          href={action.href}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:shadow-md"
+        >
+          {action.icon}
+          {action.label}
+        </Link>
+      ))}
+    </div>
   );
 }

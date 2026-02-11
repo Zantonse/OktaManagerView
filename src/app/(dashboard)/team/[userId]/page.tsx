@@ -13,7 +13,7 @@ export default async function MemberDetailPage({
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex items-center gap-4">
-        <Link href="/team">
+        <Link href="/">
           <Button variant="ghost" size="icon" className="h-9 w-9">
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Back to team</span>

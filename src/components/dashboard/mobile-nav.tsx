@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Session } from "next-auth";
 import {
   LayoutDashboard,
-  Users,
   ClipboardCheck,
   Award,
   Inbox,
@@ -23,7 +22,6 @@ interface MobileNavProps {
 
 const navigationItems = [
   { href: "/", label: "Home", icon: LayoutDashboard },
-  { href: "/team", label: "Team", icon: Users },
   { href: "/reviews", label: "Reviews", icon: ClipboardCheck },
   { href: "/certifications", label: "Certifications", icon: Award },
   { href: "/requests", label: "Requests", icon: Inbox },
@@ -43,17 +41,18 @@ export function MobileNavSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-64 p-0">
-        <SheetHeader className="border-b border-border px-4 py-4">
-          <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <SheetTitle className="text-lg font-bold">Okta Manager</SheetTitle>
+      <SheetContent side="left" className="w-64 p-0 bg-[var(--sidebar)]">
+        <SheetHeader className="border-b border-border px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--sidebar-primary)]">
+              <Shield className="h-4 w-4 text-white" />
+            </div>
+            <SheetTitle className="text-[15px] font-bold text-foreground">Okta Manager</SheetTitle>
           </div>
         </SheetHeader>
 
-        {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -63,13 +62,13 @@ export function MobileNavSheet({
                   href={item.href}
                   onClick={handleLinkClick}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-primary)] font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-[var(--sidebar-accent)]"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-[18px] w-[18px]" />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -77,9 +76,8 @@ export function MobileNavSheet({
           </div>
         </nav>
 
-        {/* Settings Section */}
         <div className="border-t border-border p-3">
-          <nav className="space-y-2">
+          <nav className="space-y-0.5">
             {settingsItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -89,13 +87,13 @@ export function MobileNavSheet({
                   href={item.href}
                   onClick={handleLinkClick}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-primary)] font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-[var(--sidebar-accent)]"
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-[18px] w-[18px]" />
                   <span>{item.label}</span>
                 </Link>
               );

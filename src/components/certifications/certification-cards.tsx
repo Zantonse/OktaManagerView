@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { OktaCertificationTask } from "@/types/okta";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +39,12 @@ export function CertificationCards({ tasks }: CertificationCardsProps) {
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1">
-                <h3 className="font-semibold">{task.resourceName || task.resourceId}</h3>
+                <Link
+                  href={`/certifications/${task.id}?campaignId=${task.campaignId}`}
+                  className="hover:underline text-primary"
+                >
+                  <h3 className="font-semibold">{task.resourceName || task.resourceId}</h3>
+                </Link>
                 <p className="text-xs text-muted-foreground">{task.resourceType}</p>
               </div>
               <Badge className={statusColors[task.status] || "bg-gray-100 text-gray-800"}>

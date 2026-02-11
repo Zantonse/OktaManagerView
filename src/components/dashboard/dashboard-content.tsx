@@ -4,7 +4,7 @@ import useSWR from "swr";
 import { OktaUser, OktaCampaign, OktaAccessRequest } from "@/types/okta";
 import { OverviewCards } from "./overview-cards";
 import { QuickActions } from "./quick-actions";
-import { ActivityFeed } from "./activity-feed";
+import { TeamContent } from "@/components/team/team-content";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -30,33 +30,29 @@ export function DashboardContent() {
     revalidateOnFocus: false,
   });
 
-  // Fetch all requests (for activity feed)
-  const { data: allRequestsData } = useSWR<OktaAccessRequest[]>(
-    "/api/okta/governance/requests?limit=50",
-    fetcher,
-    { revalidateOnFocus: false }
-  );
-
   const isLoading = isLoadingUsers || isLoadingRequests || isLoadingCampaigns;
 
-  // Extract metrics
-  const directReportsCount = usersData ? usersData.length : 0;
-  const onPTOCount = usersData
+  // Extract metrics — use Array.isArray to guard against error responses
+  const directReportsCount = Array.isArray(usersData) ? usersData.length : 0;
+  const onPTOCount = Array.isArray(usersData)
     ? usersData.filter((u) => u.profile.onPTO === true).length
     : 0;
-  const pendingRequestsCount = requestsData ? requestsData.length : 0;
-  const activeReviewsCount = campaignsData ? campaignsData.length : 0;
+  const pendingRequestsCount = Array.isArray(requestsData) ? requestsData.length : 0;
+  const activeReviewsCount = Array.isArray(campaignsData) ? campaignsData.length : 0;
 
   return (
-    <div className="space-y-8 p-6 lg:p-8">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Dashboard
-        </h1>
-        <p className="mt-2 text-base text-muted-foreground">
-          Manage your team and access reviews
-        </p>
+    <div className="space-y-6 px-6 py-6 lg:px-8 lg:py-8">
+      {/* Header */}
+      <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage your team and access reviews
+          </p>
+        </div>
+        <QuickActions />
       </div>
 
       {/* Overview Cards */}
@@ -68,15 +64,13 @@ export function DashboardContent() {
         isLoading={isLoading}
       />
 
-      {/* Quick Actions */}
-      <QuickActions />
-
-      {/* Activity Feed */}
-      <ActivityFeed
-        requests={allRequestsData || []}
-        campaigns={campaignsData || []}
-        isLoading={isLoadingCampaigns}
-      />
+      {/* Team */}
+      <div>
+        <h2 className="text-[15px] font-semibold text-foreground mb-3">
+          Team Members
+        </h2>
+        <TeamContent />
+      </div>
     </div>
   );
 }

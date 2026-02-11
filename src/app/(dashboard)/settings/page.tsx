@@ -1,3 +1,5 @@
+import { SettingsContent } from "@/components/settings/settings-content";
+
 export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
@@ -6,11 +8,7 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Manage your preferences and account settings</p>
       </div>
 
-      <div className="rounded-lg border border-dashed p-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          Settings page coming soon.
-        </p>
-      </div>
+      <SettingsContent />
     </div>
   );
 }

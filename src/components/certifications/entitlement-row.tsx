@@ -21,6 +21,7 @@ export function EntitlementRow({ task }: EntitlementRowProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          campaignId: task.campaignId,
           certificationId: task.id,
           decision: "APPROVE",
         }),
@@ -51,6 +52,7 @@ export function EntitlementRow({ task }: EntitlementRowProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          campaignId: task.campaignId,
           certificationId: task.id,
           decision: "REVOKE",
           justification,

@@ -169,6 +169,20 @@ export async function getCertificationTasks(campaignId: string) {
   );
 }
 
+export async function submitCertificationDecision(
+  campaignId: string,
+  taskId: string,
+  decision: { decision: 'APPROVE' | 'REVOKE'; justification?: string }
+) {
+  return oktaFetch<import('@/types/okta').OktaCertificationTask>(
+    `/governance/api/v2/campaigns/${campaignId}/reviewers/tasks/${taskId}`,
+    {
+      method: 'PATCH',
+      body: decision,
+    }
+  );
+}
+
 // ─── Governance - Access Requests ─────────────────────
 
 export async function getAccessRequests(params?: { status?: string; after?: string; limit?: string }) {

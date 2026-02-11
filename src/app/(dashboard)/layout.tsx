@@ -19,14 +19,14 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:w-[280px] lg:flex-col lg:border-r lg:border-border lg:bg-card">
+      <aside className="hidden lg:flex lg:w-[260px] lg:flex-col lg:flex-shrink-0 lg:border-r lg:border-border">
         <Sidebar session={session} />
       </aside>
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top Navigation */}
-        <nav className="border-b border-border bg-card">
+        <nav className="bg-background/80 backdrop-blur-sm border-b border-border/50">
           <TopNav session={session} />
         </nav>
 

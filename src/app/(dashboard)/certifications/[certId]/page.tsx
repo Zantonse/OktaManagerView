@@ -4,10 +4,12 @@ import Link from "next/link";
 
 interface CertificationDetailPageProps {
   params: Promise<{ certId: string }>;
+  searchParams: Promise<{ campaignId?: string }>;
 }
 
-export default async function CertificationDetailPage({ params }: CertificationDetailPageProps) {
+export default async function CertificationDetailPage({ params, searchParams }: CertificationDetailPageProps) {
   const { certId } = await params;
+  const { campaignId } = await searchParams;
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
@@ -20,7 +22,7 @@ export default async function CertificationDetailPage({ params }: CertificationD
         <h1 className="text-3xl font-bold tracking-tight">Certification Details</h1>
       </div>
 
-      <CertificationDetail certId={certId} />
+      <CertificationDetail certId={certId} campaignId={campaignId ?? ""} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import useSWR from "swr";
 import { OktaCertificationTask } from "@/types/okta";
 import { Card } from "@/components/ui/card";
@@ -13,6 +13,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface CertificationDetailProps {
   certId: string;
+  campaignId: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -27,11 +28,17 @@ const decisionColors: Record<string, string> = {
   REVOKE: "bg-red-100 text-red-800",
 };
 
-export function CertificationDetail({ certId }: CertificationDetailProps) {
-  // Note: In a real implementation, we would fetch the individual certification task
-  // For now, this is a placeholder that would be expanded with actual API calls
-  const [isLoading] = useState(false);
-  const [task] = useState<OktaCertificationTask | null>(null);
+export function CertificationDetail({ certId, campaignId }: CertificationDetailProps) {
+  const { data: tasks, isLoading } = useSWR<OktaCertificationTask[]>(
+    campaignId ? `/api/okta/governance/certifications?campaignId=${campaignId}` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
+  const task = useMemo(
+    () => tasks?.find((t) => t.id === certId) ?? null,
+    [tasks, certId]
+  );
 
   if (isLoading) {
     return (

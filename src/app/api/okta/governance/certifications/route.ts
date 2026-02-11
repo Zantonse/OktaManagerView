@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getCertificationTasks } from "@/lib/okta/client";
+import { getCertificationTasks, submitCertificationDecision } from "@/lib/okta/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -38,24 +38,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { certificationId, decision, justification } = body;
+    const { campaignId, certificationId, decision, justification } = body;
 
-    if (!certificationId || !decision) {
+    if (!campaignId || !certificationId || !decision) {
       return NextResponse.json(
-        { error: "certificationId and decision are required" },
+        { error: "campaignId, certificationId, and decision are required" },
         { status: 400 }
       );
     }
 
-    // TODO: Implement certification decision submission
-    // This would call the Okta API to update the certification task
-    // For now, return a placeholder response
-    return NextResponse.json({
-      id: certificationId,
+    const result = await submitCertificationDecision(campaignId, certificationId, {
       decision,
-      justification,
-      completedDate: new Date().toISOString(),
+      ...(justification && { justification }),
     });
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error updating certification:", error);
     return NextResponse.json(

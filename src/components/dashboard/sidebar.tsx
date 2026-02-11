@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Session } from "next-auth";
 import {
   LayoutDashboard,
-  Users,
   ClipboardCheck,
   Award,
   Inbox,
@@ -13,7 +12,6 @@ import {
   Shield,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -22,7 +20,6 @@ interface SidebarProps {
 
 const navigationItems = [
   { href: "/", label: "Home", icon: LayoutDashboard },
-  { href: "/team", label: "Team", icon: Users },
   { href: "/reviews", label: "Reviews", icon: ClipboardCheck },
   { href: "/certifications", label: "Certifications", icon: Award },
   { href: "/requests", label: "Requests", icon: Inbox },
@@ -44,16 +41,18 @@ export function Sidebar({ session }: SidebarProps) {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[var(--sidebar)]">
       {/* Logo */}
-      <div className="flex items-center gap-2 p-6">
-        <Shield className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold text-foreground">Okta Manager</span>
+      <div className="flex items-center gap-2.5 px-5 py-5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--sidebar-primary)]">
+          <Shield className="h-4 w-4 text-white" />
+        </div>
+        <span className="text-[15px] font-bold tracking-tight text-foreground">Okta Manager</span>
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <div className="space-y-2">
+      <nav className="flex-1 overflow-y-auto px-3 pt-1">
+        <div className="space-y-0.5">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -62,24 +61,22 @@ export function Sidebar({ session }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-primary)] font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-[var(--sidebar-accent)]"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-[18px] w-[18px]" />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </div>
-      </nav>
 
-      {/* Settings Section */}
-      <div className="p-3">
-        <Separator className="mb-2" />
-        <nav className="space-y-2">
+        <div className="my-4 mx-3 border-t border-border" />
+
+        <div className="space-y-0.5">
           {settingsItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -88,34 +85,34 @@ export function Sidebar({ session }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-[var(--sidebar-accent)] text-[var(--sidebar-primary)] font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-[var(--sidebar-accent)]"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-[18px] w-[18px]" />
                 <span>{item.label}</span>
               </Link>
             );
           })}
-        </nav>
-      </div>
+        </div>
+      </nav>
 
       {/* User Info */}
       {session?.user && (
-        <div className="border-t border-border p-3">
+        <div className="border-t border-border p-4">
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+              <AvatarFallback className="bg-[var(--sidebar-primary)] text-white text-xs font-semibold">
                 {getInitials(session.user.name ?? undefined)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-foreground truncate">
+              <p className="text-[13px] font-semibold text-foreground truncate">
                 {session.user.name}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-[11px] text-muted-foreground truncate">
                 {session.user.email}
               </p>
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { OktaCertificationTask } from "@/types/okta";
 import {
   Table,
@@ -55,7 +56,12 @@ export function CertificationList({ tasks }: CertificationListProps) {
               className={isOverdue(task) ? "bg-red-50" : undefined}
             >
               <TableCell className="font-medium">
-                {task.resourceName || task.resourceId}
+                <Link
+                  href={`/certifications/${task.id}?campaignId=${task.campaignId}`}
+                  className="hover:underline text-primary"
+                >
+                  {task.resourceName || task.resourceId}
+                </Link>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 {task.resourceType}

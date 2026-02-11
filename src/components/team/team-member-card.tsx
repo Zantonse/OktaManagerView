@@ -46,9 +46,9 @@ export function TeamMemberCard({ user }: TeamMemberCardProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <div className="font-semibold">
+              <Link href={`/team/${user.id}`} className="font-semibold hover:text-primary hover:underline">
                 {user.profile.firstName} {user.profile.lastName}
-              </div>
+              </Link>
               {user.profile.onPTO && (
                 <Badge variant="secondary" className="mt-1 text-xs">
                   PTO
