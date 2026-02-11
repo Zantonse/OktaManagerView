@@ -10,8 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CertificationList } from "./certification-list";
 import { CertificationCards } from "./certification-cards";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from "@/lib/fetcher";
 
 export function CertificationsContent() {
   const searchParams = useSearchParams();

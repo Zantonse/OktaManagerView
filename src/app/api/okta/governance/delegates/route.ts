@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { getDelegates, createDelegate } from "@/lib/okta/client";
+import { createDelegateSchema } from "@/lib/validations/okta";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -28,14 +30,25 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { delegateId, scope, startDate, endDate } = body;
 
-    if (!delegateId || !scope || !startDate || !endDate) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+    // Validate request body
+    let validatedData: z.infer<typeof createDelegateSchema>;
+    try {
+      validatedData = createDelegateSchema.parse(body);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            error: "Validation failed",
+            details: validationError.issues,
+          },
+          { status: 400 }
+        );
+      }
+      throw validationError;
     }
+
+    const { delegateId, scope, startDate, endDate } = validatedData;
 
     const delegate = await createDelegate({
       delegateId,

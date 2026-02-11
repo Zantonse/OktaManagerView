@@ -5,8 +5,7 @@ import { OktaUser, OktaCampaign, OktaAccessRequest } from "@/types/okta";
 import { OverviewCards } from "./overview-cards";
 import { QuickActions } from "./quick-actions";
 import { TeamContent } from "@/components/team/team-content";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from "@/lib/fetcher";
 
 export function DashboardContent() {
   // Fetch direct reports
@@ -69,7 +68,7 @@ export function DashboardContent() {
         <h2 className="text-[15px] font-semibold text-foreground mb-3">
           Team Members
         </h2>
-        <TeamContent />
+        <TeamContent initialUsers={usersData} />
       </div>
     </div>
   );

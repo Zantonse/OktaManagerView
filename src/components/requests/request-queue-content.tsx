@@ -8,8 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RequestQueue } from "./request-queue";
 import { RequestCards } from "./request-cards";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from "@/lib/fetcher";
 
 export function RequestQueueContent() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);

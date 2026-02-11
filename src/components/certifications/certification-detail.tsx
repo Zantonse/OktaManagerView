@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils/date";
 import { EntitlementRow } from "./entitlement-row";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from "@/lib/fetcher";
 
 interface CertificationDetailProps {
   certId: string;

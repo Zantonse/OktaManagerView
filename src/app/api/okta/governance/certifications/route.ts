@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { getCertificationTasks, submitCertificationDecision } from "@/lib/okta/client";
+import { certificationDecisionSchema } from "@/lib/validations/okta";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -38,14 +40,26 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { campaignId, certificationId, decision, justification } = body;
 
-    if (!campaignId || !certificationId || !decision) {
-      return NextResponse.json(
-        { error: "campaignId, certificationId, and decision are required" },
-        { status: 400 }
-      );
+    // Validate request body
+    let validatedData: z.infer<typeof certificationDecisionSchema>;
+    try {
+      validatedData = certificationDecisionSchema.parse(body);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            error: "Validation failed",
+            details: validationError.issues,
+          },
+          { status: 400 }
+        );
+      }
+      throw validationError;
     }
+
+    const { campaignId, certificationId, decision, justification } =
+      validatedData;
 
     const result = await submitCertificationDecision(campaignId, certificationId, {
       decision,

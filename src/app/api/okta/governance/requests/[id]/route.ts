@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { updateAccessRequest } from "@/lib/okta/client";
+import { accessRequestUpdateSchema } from "@/lib/validations/okta";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 export async function PUT(
   request: NextRequest,
@@ -15,13 +17,27 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { status, comment } = body;
 
-    if (!status || !["APPROVED", "DENIED"].includes(status)) {
-      return NextResponse.json({ error: "Invalid status. Must be APPROVED or DENIED." }, { status: 400 });
+    // Validate request body
+    let validatedData: z.infer<typeof accessRequestUpdateSchema>;
+    try {
+      validatedData = accessRequestUpdateSchema.parse(body);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            error: "Validation failed",
+            details: validationError.issues,
+          },
+          { status: 400 }
+        );
+      }
+      throw validationError;
     }
 
-    const result = await updateAccessRequest(id, { status: status as 'APPROVED' | 'DENIED', comment });
+    const { status, comment } = validatedData;
+
+    const result = await updateAccessRequest(id, { status, comment });
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error updating access request:", error);

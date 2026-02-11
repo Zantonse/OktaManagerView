@@ -11,8 +11,7 @@ import { OktaUser, OktaGroup, OktaDelegateAppointment } from "@/types/okta";
 import { formatDate } from "@/lib/utils/date";
 import { AccessSummary } from "./access-summary";
 import { AlertTriangle, Users } from "lucide-react";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from "@/lib/fetcher";
 
 interface AppWithRole {
   id: string;

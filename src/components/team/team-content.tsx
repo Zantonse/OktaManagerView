@@ -17,14 +17,17 @@ import { OktaUser, OktaDelegateAppointment } from "@/types/okta";
 import Link from "next/link";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fetcher } from "@/lib/fetcher";
 
 interface DelegatesBulkResponse {
   appointments: OktaDelegateAppointment[];
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+interface TeamContentProps {
+  initialUsers?: OktaUser[];
+}
 
-export function TeamContent() {
+export function TeamContent({ initialUsers }: TeamContentProps) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -36,10 +39,15 @@ export function TeamContent() {
   if (status !== "all") queryParams.set("status", status);
   queryParams.set("limit", "200");
 
+  // SWR configuration: use fallbackData to prevent redundant fetches when initialUsers is provided
+  const swrOptions = initialUsers
+    ? { revalidateOnFocus: false, fallbackData: initialUsers }
+    : { revalidateOnFocus: false };
+
   const { data, error, isLoading, mutate } = useSWR<OktaUser[]>(
     `/api/okta/users?${queryParams.toString()}`,
     fetcher,
-    { revalidateOnFocus: false }
+    swrOptions
   );
 
   // Fetch delegate appointments for all loaded users

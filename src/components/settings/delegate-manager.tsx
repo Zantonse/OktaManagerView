@@ -164,7 +164,7 @@ export function DelegateManager({ onSuccess }: DelegateManagerProps) {
             </div>
 
             {showResults && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-10">
                 <div className="max-h-[200px] overflow-y-auto">
                   {searchResults.map((user) => (
                     <button
@@ -176,7 +176,7 @@ export function DelegateManager({ onSuccess }: DelegateManagerProps) {
                         <div className="font-medium text-sm">
                           {user.profile.firstName} {user.profile.lastName}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-popover-foreground/60">
                           {user.profile.email}
                         </div>
                       </div>

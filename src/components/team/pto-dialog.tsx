@@ -213,7 +213,7 @@ export function PTODialog({
                     </div>
 
                     {showResults && searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-10">
                         <div className="max-h-[200px] overflow-y-auto">
                           {searchResults.map((result) => (
                             <button
@@ -225,7 +225,7 @@ export function PTODialog({
                                 {result.profile.firstName}{" "}
                                 {result.profile.lastName}
                               </div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-xs text-popover-foreground/60">
                                 {result.profile.email}
                               </div>
                             </button>
@@ -235,7 +235,7 @@ export function PTODialog({
                     )}
 
                     {showResults && searchResults.length === 0 && searchQuery.trim() && !isSearching && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border rounded-md shadow-lg z-10 p-3 text-sm text-muted-foreground">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-md shadow-lg z-10 p-3 text-sm text-popover-foreground/60">
                         No users found
                       </div>
                     )}

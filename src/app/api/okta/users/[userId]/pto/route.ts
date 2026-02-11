@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { getUser, appointDelegate } from "@/lib/okta/client";
+import { ptoAssignmentSchema } from "@/lib/validations/okta";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 export async function PUT(
   request: NextRequest,
@@ -21,14 +23,25 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { ptoStartDate, ptoEndDate, delegateId, note } = body;
 
-    if (!delegateId) {
-      return NextResponse.json(
-        { error: "A delegate is required" },
-        { status: 400 }
-      );
+    // Validate request body
+    let validatedData: z.infer<typeof ptoAssignmentSchema>;
+    try {
+      validatedData = ptoAssignmentSchema.parse(body);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        return NextResponse.json(
+          {
+            error: "Validation failed",
+            details: validationError.issues,
+          },
+          { status: 400 }
+        );
+      }
+      throw validationError;
     }
+
+    const { ptoStartDate, ptoEndDate, delegateId, note } = validatedData;
 
     const fullName = `${user.profile.firstName} ${user.profile.lastName}`;
     const delegateNote = note || `${fullName} is on PTO, and you have been appointed to cover for this duration. Thank you!`;

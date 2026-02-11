@@ -8,8 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RequestDetailContent } from "./request-detail-content";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from "@/lib/fetcher";
 
 interface RequestDetailPageProps {
   params: Promise<{ requestId: string }>;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Session } from "next-auth";
 import {
   LayoutDashboard,
+  Users,
   ClipboardCheck,
   Award,
   Inbox,
@@ -20,6 +21,7 @@ interface SidebarProps {
 
 const navigationItems = [
   { href: "/", label: "Home", icon: LayoutDashboard },
+  { href: "/team", label: "Team", icon: Users },
   { href: "/reviews", label: "Reviews", icon: ClipboardCheck },
   { href: "/certifications", label: "Certifications", icon: Award },
   { href: "/requests", label: "Requests", icon: Inbox },

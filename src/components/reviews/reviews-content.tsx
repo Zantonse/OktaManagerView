@@ -8,8 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ReviewsList } from "./reviews-list";
 import { ReviewsCards } from "./reviews-cards";
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { fetcher } from "@/lib/fetcher";
 
 export function ReviewsContent() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
