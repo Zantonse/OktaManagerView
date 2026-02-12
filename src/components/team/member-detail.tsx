@@ -11,7 +11,19 @@ import { Button } from "@/components/ui/button";
 import { OktaUser, OktaGroup, OktaDelegateAppointment } from "@/types/okta";
 import { formatDate } from "@/lib/utils/date";
 import { AccessSummary } from "./access-summary";
-import { AlertTriangle, Users, Trash2 } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Users, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { fetcher } from "@/lib/fetcher";
 import { EndPTODialog } from "./end-pto-dialog";
 import { LifecycleDialog } from "./lifecycle-dialog";
@@ -53,6 +65,10 @@ export function MemberDetail({ userId }: MemberDetailProps) {
   const [endPTODialogOpen, setEndPTODialogOpen] = useState(false);
   const [selectedDelegateForEnd, setSelectedDelegateForEnd] = useState<OktaDelegateAppointment | null>(null);
   const [lifecycleDialogOpen, setLifecycleDialogOpen] = useState(false);
+  const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
+  const [campaignName, setCampaignName] = useState("");
+  const [campaignDescription, setCampaignDescription] = useState("");
+  const [campaignSubmitting, setCampaignSubmitting] = useState(false);
 
   const { data: user, error: userError, isLoading: userLoading, mutate: mutateUser } = useSWR<OktaUser>(
     `/api/okta/users/${userId}`,
@@ -278,7 +294,33 @@ export function MemberDetail({ userId }: MemberDetailProps) {
         </TabsContent>
 
         {/* Apps & Entitlements Tab */}
-        <TabsContent value="apps">
+        <TabsContent value="apps" className="space-y-4">
+          <div className="p-4 border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/50 rounded-lg flex flex-col sm:flex-row gap-3 sm:items-center">
+            <ShieldAlert className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-blue-800 dark:text-blue-200 font-medium">
+                Access Removal
+              </p>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mt-0.5">
+                Access cannot be removed directly. To review and revoke this
+                user&apos;s access, start an access certification campaign.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-start sm:self-center shrink-0"
+              onClick={() => {
+                setCampaignName(
+                  `Access review - ${user.profile.firstName} ${user.profile.lastName}`
+                );
+                setCampaignDescription("");
+                setCampaignDialogOpen(true);
+              }}
+            >
+              Start Campaign
+            </Button>
+          </div>
           <Card className="p-6">
             <AccessSummary
               apps={apps || []}
@@ -442,6 +484,96 @@ export function MemberDetail({ userId }: MemberDetailProps) {
             mutateUser();
           }}
         />
+      )}
+
+      {user && (
+        <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Start Access Certification</DialogTitle>
+              <DialogDescription>
+                Create a manager-based certification campaign to review access
+                for {user.profile.firstName} {user.profile.lastName}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="campaign-name">Campaign Name</Label>
+                <Input
+                  id="campaign-name"
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  placeholder="Enter campaign name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="campaign-description">
+                  Description{" "}
+                  <span className="text-muted-foreground font-normal">
+                    (optional)
+                  </span>
+                </Label>
+                <Textarea
+                  id="campaign-description"
+                  value={campaignDescription}
+                  onChange={(e) => setCampaignDescription(e.target.value)}
+                  placeholder="Add a description for this campaign"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setCampaignDialogOpen(false)}
+                disabled={campaignSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!campaignName.trim()) {
+                    toast.error("Campaign name is required");
+                    return;
+                  }
+                  setCampaignSubmitting(true);
+                  try {
+                    const res = await fetch(
+                      "/api/okta/governance/campaigns",
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: campaignName.trim(),
+                          description:
+                            campaignDescription.trim() || undefined,
+                          userIds: [userId],
+                        }),
+                      }
+                    );
+                    if (!res.ok) {
+                      const data = await res.json();
+                      throw new Error(
+                        data.error || "Failed to create campaign"
+                      );
+                    }
+                    toast.success(
+                      `Campaign started for ${user.profile.firstName} ${user.profile.lastName}`
+                    );
+                    setCampaignDialogOpen(false);
+                  } catch (err) {
+                    toast.error((err as Error).message);
+                  } finally {
+                    setCampaignSubmitting(false);
+                  }
+                }}
+                disabled={campaignSubmitting || !campaignName.trim()}
+              >
+                {campaignSubmitting ? "Starting..." : "Start Campaign"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
