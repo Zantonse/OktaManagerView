@@ -1,116 +1,64 @@
-# HANDOVER — Okta Manager Self-Service Access Portal
+# HANDOVER — Session Shift-Change Report
 
 ## 1. Session Summary
 
-**Date:** 2026-02-11
+**Date:** 2026-02-12
 **Branch:** `craig/dev`
-**Remote:** `origin` → `Zantonse/OktaManagerView.git`
+**Latest commit:** `169d2d6` — "Add start campaign action to member detail Apps & Entitlements tab"
 
-This session executed a 19-item improvement plan for the Okta Manager Self-Service Access Portal. The plan was generated from a brainstorming audit of the entire codebase. Work was dispatched across parallel subagents. Of the 19 tasks, **15 are completed**, **2 are finishing** (End PTO dialog, activity feed), and **2 remain pending** (pagination, tests).
+This session added a feature allowing managers to start an access certification campaign for a specific direct report directly from the team member detail page. The work involved adding an informational banner to the Apps & Entitlements tab explaining that access removal requires a certification campaign, plus an inline dialog to create the campaign scoped to that single user. No new API routes or components were needed — the feature reuses the existing `POST /api/okta/governance/campaigns` endpoint.
 
 ## 2. What Got Done
 
-### P0 — Critical (all done)
-- **Task 1: Fix duplicate team data fetching** — `DashboardContent` fetched `/api/okta/users` then `TeamContent` fetched the same endpoint. Fixed by passing `initialUsers` as SWR `fallbackData`.
-- **Task 2: Fix SWR fetcher** — `src/lib/fetcher.ts` now throws on non-200 responses instead of silently returning error JSON.
-- **Task 3: Add Zod validation to API route inputs** — Added schemas in `src/lib/validations/okta.ts`: `ptoAssignmentSchema`, `certificationDecisionSchema`, `createDelegateSchema`, `accessRequestUpdateSchema`, `userLifecycleActionSchema`.
-
-### P1 — Important (mostly done)
-- **Task 5: SWR mutate after actions** — All SWR hooks now capture `mutate` and call it after successful actions (member-detail, certifications, requests, reviews).
-- **Task 6: Fix certification decision API path** — Corrected POST vs PATCH mismatch between client function and API route handler.
-- **Task 7: Debounce PTO delegate search** — Applied `useDebounce` hook (300ms) to delegate search in `pto-dialog.tsx`.
-- **Task 8: Add empty states** — Meaningful empty state cards added to team, certifications, requests, and reviews list views.
-- **Task 9: Standardize error handling** — All 7 major components now use consistent `border-destructive/50 bg-destructive/10` with "Try again" button calling `mutate()`.
-
-### P2 — Nice to Have (mostly done)
-- **Task 11: Add "End PTO" / cancel delegate** — New `EndPTODialog` component + `DELETE /api/okta/users/[userId]/delegates/[delegateId]` route. Trash icon in team table and member detail.
-- **Task 12: Suspend/unsuspend UI** — New `POST /api/okta/users/[userId]/lifecycle` route with Zod validation. Confirmation dialog with status-aware buttons in member detail.
-- **Task 13: Fix theme tokens** — Replaced hard-coded `bg-white` with theme-aware tokens in PTO dialog.
-- **Task 14: Skeleton loading states** — Added skeleton placeholders to member detail, certification detail, and request detail pages.
-- **Task 15: Approval confirmations** — Added `AlertDialog` confirmation step before approve/deny on access requests and certifications.
-- **Task 16: Audit logging for search** — Added console logging of search queries with session email in user search API.
-
-### P3 — Minor (all done)
-- **Task 17: next.config.ts image domains** — Added Okta CDN domains to `images.remotePatterns`.
-- **Task 18: Add Team to sidebar navigation** — Added "Team" link with Users icon.
-- **Task 19: Wire up activity feed** — Replaced placeholder with real recent activity from governance API.
+- **`src/components/team/member-detail.tsx`** — Added info banner (blue alert with `ShieldAlert` icon) at the top of the Apps & Entitlements tab explaining access removal workflow. Added "Start Campaign" button that opens an inline dialog. Dialog has pre-filled campaign name (`"Access review - {firstName} {lastName}"`), optional description textarea, and submits to existing campaigns API with `userIds: [userId]`. Follows existing dialog patterns (LifecycleDialog, EndPTODialog) for consistency. Includes dark mode support on the banner.
+- **`docs/plans/2026-02-12-campaign-from-member-detail-design.md`** (new file) — Design document capturing the brainstorming and design decisions for this feature.
 
 ## 3. What Didn't Work / Bugs Encountered
 
-- **Parallel subagent file conflicts** — Multiple agents editing `member-detail.tsx` simultaneously caused "File modified since read" errors. Agents recovered by re-reading and re-applying, but some edits were transiently lost.
-- **Edit collisions on `src/lib/validations/okta.ts`** — Both Task 3 and Task 12 appended to the same file. Resolved by sequential re-application.
+- **No `alert.tsx` shadcn component existed** — Rather than adding a new UI component for a single use, built the info banner with plain Tailwind classes matching the existing hand-rolled alert pattern in the Delegates tab (yellow warning at line 338 of member-detail.tsx).
+- **Pre-existing TypeScript error in `src/__tests__/lib/fetcher.test.ts:72`** — `Argument of type 'undefined' is not assignable to parameter of type 'string | null'`. This is unrelated to our changes and existed before this session.
 
 ## 4. Key Decisions Made
 
-| Decision | Choice | Reasoning |
-|----------|--------|-----------|
-| Duplicate fetch fix | SWR `fallbackData` | Avoids refactoring component hierarchy |
-| Error UI pattern | `border-destructive/50` + mutate button | Uses shadcn/ui CSS vars, works across themes |
-| Approval confirmation | shadcn/ui `AlertDialog` | Maintains design system consistency |
-| Lifecycle endpoint | Single POST with `action` field | Matches existing route patterns |
-| PTO flag behavior | Flag-only (no suspend) | PTO users may still check in |
-| Delegates API | try/catch with fallback | Beta API (2025.08.0) may not be available |
+| Decision | Reasoning |
+|----------|-----------|
+| Place banner in Apps & Entitlements tab (not page header) | Contextually relevant — manager sees the user's access and gets the CTA where intent forms |
+| Inline dialog instead of navigating to `/reviews/create` | Reduces friction — manager's intent is clear (review this one person), no need for full form with user picker |
+| Info banner (not subtle hint text) | Governance workflow managers may not intuitively discover; visible callout teaches the process |
+| No separate component file for the dialog | Lightweight, page-specific dialog — follows same pattern as existing LifecycleDialog/EndPTODialog rendered inline |
+| Reuse existing `POST /api/okta/governance/campaigns` | Endpoint already accepts `userIds` array and scopes campaigns via `resourceSets` — single-element array works correctly |
+| Set campaign name on button click (not component mount) | Ensures fresh name if manager navigates between team members without remounting |
 
 ## 5. Lessons Learned / Gotchas
 
-- **Governance Delegates API is Beta** — Must wrap in try/catch with fallback UI.
-- **`profile.managerId` is email, not UID** — Direct reports identified by `profile.managerId eq "{email}"`.
-- **Don't parallelize agents editing the same file** — Serialize tasks sharing files.
-- **SWR `fallbackData` vs `initialData`** — `fallbackData` still triggers revalidation; `initialData` does not. We use `fallbackData` so stale data gets refreshed.
+- **Okta campaign `resourceSets` accepts single-user arrays** — `{ resources: [userId] }` correctly creates a campaign scoped to one user. No special single-user endpoint needed.
+- **The existing Delegates tab warning banner lacks dark mode variants** — The new info banner added `dark:` classes, which is an improvement the Delegates tab could adopt later.
+- **`submitReviewDecision` still uses SSWS** — Noted in previous handover, still not converted to `*AsUser` variant.
 
 ## 6. Current State
 
-- **Build:** Not verified post-changes — run `npm run build` to check.
-- **Tests:** Not written yet (Task 10 pending).
-- **Uncommitted changes:** 9 modified + 4 new files (see below).
-- **Branch:** `craig/dev`
-- **Latest commit:** `f0d9fb2` (Batch 1: Fix critical issues, add validation, and improve UX)
-
-```
-Modified:
-  src/components/certifications/certification-detail.tsx
-  src/components/certifications/certifications-content.tsx
-  src/components/requests/request-detail-page.tsx
-  src/components/requests/request-queue-content.tsx
-  src/components/reviews/create-review-form.tsx
-  src/components/reviews/reviews-content.tsx
-  src/components/team/member-detail.tsx
-  src/components/team/team-table.tsx
-  src/lib/validations/okta.ts
-
-New (untracked):
-  src/app/api/okta/users/[userId]/delegates/[delegateId]/route.ts
-  src/app/api/okta/users/[userId]/lifecycle/route.ts
-  src/components/team/end-pto-dialog.tsx
-  src/components/ui/alert-dialog.tsx
-```
+- **Build:** TypeScript compiles cleanly for all changed files. One pre-existing error in `src/__tests__/lib/fetcher.test.ts:72` (unrelated).
+- **Tests:** Not run this session.
+- **Uncommitted changes:** Yes — 31 modified files and 9 untracked files from prior sessions (dark mode, redesigned components, globals.css, auth changes, etc.). These are NOT part of this session's commit.
+- **Branch:** `craig/dev` (pushed to `origin/craig/dev`)
+- **Latest commit:** `169d2d6`
 
 ## 7. Clear Next Steps
 
-1. **Verify build** — `npm run build` and fix any TypeScript errors from parallel edits.
-2. **Commit Batch 2** — Stage and commit the 13 changed/new files.
-3. **Task 4: Add pagination** — Okta API supports `after` cursors but no UI implements load-more yet.
-4. **Task 10: Write tests** — Unit tests for `src/lib/okta/client.ts`, API routes, components, E2E. MSW handlers exist in `tests/mocks/`.
-5. **Production readiness** — Configure `.env.local` with real Okta credentials and test end-to-end.
+1. **Run tests** — `npm run test` to verify existing tests still pass
+2. **Commit pre-existing uncommitted changes** — 31 modified files from prior sessions (dark mode, OAuth delegation, UI redesigns) need to be reviewed and committed, ideally in logical batches
+3. **Test campaign creation flow** — Log in, navigate to a team member's detail page, open Apps & Entitlements tab, click Start Campaign, verify campaign is created in Okta
+4. **Handle expired sessions in UI** — When token refresh fails, governance routes return 401. UI should redirect to login or show "session expired"
+5. **Add `submitReviewDecisionAsUser`** — `submitReviewDecision` in `client.ts` still uses SSWS admin token
+6. **Fix pre-existing test type error** — `src/__tests__/lib/fetcher.test.ts:72` passes `undefined` where `string | null` is expected
 
 ## 8. Important Files Map
 
-| File | Description |
-|------|-------------|
-| `src/lib/okta/client.ts` | All Okta Management API calls (users, governance, delegates) |
-| `src/lib/auth.ts` | NextAuth v5 config with Okta OIDC provider |
-| `src/lib/fetcher.ts` | Global SWR fetcher with `res.ok` check |
-| `src/lib/validations/okta.ts` | Zod schemas for all API route inputs |
-| `src/lib/hooks/use-debounce.ts` | Debounce hook used in PTO delegate search |
-| `src/types/okta.ts` | TypeScript types for all Okta API responses |
-| `src/middleware.ts` | Auth middleware — redirects unauthenticated to `/login` |
-| `src/components/team/team-content.tsx` | Main team list with SWR, search, filters, bulk select |
-| `src/components/team/team-table.tsx` | Desktop table with PTO and End PTO actions |
-| `src/components/team/member-detail.tsx` | Full member detail with tabs + lifecycle actions |
-| `src/components/team/pto-dialog.tsx` | Delegate assignment dialog with debounced search |
-| `src/components/team/end-pto-dialog.tsx` | **NEW** — End PTO / cancel delegate confirmation |
-| `src/components/ui/alert-dialog.tsx` | **NEW** — shadcn/ui AlertDialog for confirmations |
-| `src/app/api/okta/users/[userId]/pto/route.ts` | PUT — PTO delegate assignment |
-| `src/app/api/okta/users/[userId]/lifecycle/route.ts` | **NEW** — POST — suspend/unsuspend |
-| `src/app/api/okta/users/[userId]/delegates/[delegateId]/route.ts` | **NEW** — DELETE — end delegate |
-| `CLAUDE.md` | Project conventions and Okta API reference |
+| File | Status | Description |
+|------|--------|-------------|
+| `src/components/team/member-detail.tsx` | Modified | Added info banner + campaign dialog to Apps & Entitlements tab |
+| `docs/plans/2026-02-12-campaign-from-member-detail-design.md` | **NEW** | Design doc for the campaign-from-detail feature |
+| `src/app/api/okta/governance/campaigns/route.ts` | Unchanged (this session) | Existing POST endpoint that handles campaign creation with `userIds` |
+| `src/lib/okta/client.ts` | Unchanged (this session) | Contains `createCampaignAsUser()` used by the campaigns route |
+| `src/components/team/lifecycle-dialog.tsx` | Unchanged | Reference pattern for the new campaign dialog |
+| `src/components/team/end-pto-dialog.tsx` | Unchanged | Reference pattern for the new campaign dialog |

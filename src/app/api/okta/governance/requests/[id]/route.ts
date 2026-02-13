@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { updateAccessRequest } from "@/lib/okta/client";
+import { updateAccessRequestAsUser } from "@/lib/okta/client";
 import { accessRequestUpdateSchema } from "@/lib/validations/okta";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -11,6 +11,9 @@ export async function PUT(
   const session = await auth();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!session.accessToken) {
+    return NextResponse.json({ error: "No access token available" }, { status: 401 });
   }
 
   const { id } = await params;
@@ -37,7 +40,7 @@ export async function PUT(
 
     const { status, comment } = validatedData;
 
-    const result = await updateAccessRequest(id, { status, comment });
+    const result = await updateAccessRequestAsUser(session.accessToken, id, { status, comment });
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error updating access request:", error);

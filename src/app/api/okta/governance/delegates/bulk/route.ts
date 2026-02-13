@@ -1,11 +1,14 @@
 import { auth } from "@/lib/auth";
-import { getDelegateAppointmentsBulk, getUser } from "@/lib/okta/client";
+import { getDelegateAppointmentsBulkAsUser, getUser } from "@/lib/okta/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!session.accessToken) {
+    return NextResponse.json({ error: "No access token available" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -16,9 +19,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const appointments = await getDelegateAppointmentsBulk(userIds);
+    const appointments = await getDelegateAppointmentsBulkAsUser(session.accessToken, userIds);
 
-    // Resolve delegate user profiles in parallel
+    // Resolve delegate user profiles in parallel (SSWS — Management API enrichment)
     const delegateIds = [...new Set(appointments.map((a) => a.delegate.externalId))];
     const userMap = new Map<string, { name: string; email: string }>();
 

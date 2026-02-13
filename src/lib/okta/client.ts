@@ -409,7 +409,7 @@ export async function getCampaignsWithPagination(params?: { status?: string; aft
   };
 }
 
-export async function createCampaign(campaign: { name: string; description?: string; scheduledStartDate?: string; deadline?: string; resourceSets?: unknown[] }) {
+export async function createCampaign(campaign: Record<string, unknown>) {
   return oktaFetch<import('@/types/okta').OktaCampaign>('/governance/api/v1/campaigns', {
     method: 'POST',
     body: campaign,

@@ -71,36 +71,48 @@ export function RequestQueue({ requests, mutate }: RequestQueueProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {requests.map((request) => (
+            {requests.map((request) => {
+              const requesterName = request.requesterName || request.requestedBy?.externalId || "Unknown";
+              const requestedForName = request.requestedForName || request.requestedFor?.externalId;
+              const resourceType = request.requested?.resourceType || request.resourceType || "—";
+              const resourceLabel = request.resourceName || request.requested?.resourceId || request.resourceId || "N/A";
+              const justificationField = request.requesterFieldValues?.find(f => f.type === "TEXT");
+              const justification = justificationField?.value || request.justification;
+
+              return (
               <TableRow key={request.id} className="hover:bg-muted/50">
                 <TableCell>
                   <div className="space-y-1">
-                    <p className="font-semibold text-foreground">
-                      {request.requesterName || "Unknown"}
+                    <p className="font-semibold text-foreground text-sm">
+                      {requesterName}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {request.requesterId || "N/A"}
-                    </p>
+                    {requestedForName && requestedForName !== requesterName && (
+                      <p className="text-xs text-muted-foreground">
+                        for {requestedForName}
+                      </p>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-foreground">
-                      {request.resourceName || "N/A"}
+                      {resourceLabel}
                     </p>
-                    <Badge variant="outline" className={getResourceTypeColor(request.resourceType)}>
-                      {request.resourceType}
-                    </Badge>
+                    {resourceType !== "—" && (
+                      <Badge variant="outline" className={getResourceTypeColor(resourceType)}>
+                        {resourceType}
+                      </Badge>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
                   <p
                     className="text-sm text-muted-foreground truncate max-w-xs"
-                    title={request.justification || "No justification provided"}
+                    title={justification || "No justification provided"}
                   >
-                    {request.justification
-                      ? request.justification.substring(0, 100) +
-                        (request.justification.length > 100 ? "..." : "")
+                    {justification
+                      ? justification.substring(0, 100) +
+                        (justification.length > 100 ? "..." : "")
                       : "No justification"}
                   </p>
                 </TableCell>
@@ -134,7 +146,8 @@ export function RequestQueue({ requests, mutate }: RequestQueueProps) {
                   )}
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </div>

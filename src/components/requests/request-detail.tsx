@@ -93,8 +93,8 @@ export function RequestDetail({
               <p className="text-sm font-medium text-foreground">
                 {request.resourceName || "N/A"}
               </p>
-              <Badge className={getResourceTypeColor(request.resourceType)}>
-                {request.resourceType}
+              <Badge className={getResourceTypeColor(request.resourceType || "")}>
+                {request.resourceType || "—"}
               </Badge>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { deleteDelegate } from "@/lib/okta/client";
+import { deleteDelegateAsUser } from "@/lib/okta/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
@@ -10,11 +10,14 @@ export async function DELETE(
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!session.accessToken) {
+    return NextResponse.json({ error: "No access token available" }, { status: 401 });
+  }
 
   const { id } = await params;
 
   try {
-    await deleteDelegate(id);
+    await deleteDelegateAsUser(session.accessToken, id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting delegate:", error);

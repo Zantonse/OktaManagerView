@@ -52,18 +52,28 @@ export function RequestCards({ requests, mutate }: RequestCardsProps) {
   return (
     <>
       <div className="space-y-3">
-        {requests.map((request) => (
+        {requests.map((request) => {
+          const requesterName = request.requesterName || request.requestedBy?.externalId || "Unknown";
+          const requestedForName = request.requestedForName || request.requestedFor?.externalId;
+          const resourceType = request.requested?.resourceType || request.resourceType || "—";
+          const resourceLabel = request.resourceName || request.requested?.resourceId || request.resourceId || "N/A";
+          const justificationField = request.requesterFieldValues?.find(f => f.type === "TEXT");
+          const justification = justificationField?.value || request.justification;
+
+          return (
           <Card key={request.id} className="p-4 border border-border">
             <div className="space-y-3">
               {/* Header with Status */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground">
-                    {request.requesterName || "Unknown"}
+                  <h3 className="font-semibold text-foreground text-sm">
+                    {requesterName}
                   </h3>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {request.requesterId || "N/A"}
-                  </p>
+                  {requestedForName && requestedForName !== requesterName && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      for {requestedForName}
+                    </p>
+                  )}
                 </div>
                 <Badge className={getStatusColor(request.status)}>
                   {request.status}
@@ -74,21 +84,23 @@ export function RequestCards({ requests, mutate }: RequestCardsProps) {
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-1">Resource</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-foreground">
-                    {request.resourceName || "N/A"}
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {resourceLabel}
                   </p>
-                  <Badge variant="outline" className={getResourceTypeColor(request.resourceType)}>
-                    {request.resourceType}
-                  </Badge>
+                  {resourceType !== "—" && (
+                    <Badge variant="outline" className={getResourceTypeColor(resourceType)}>
+                      {resourceType}
+                    </Badge>
+                  )}
                 </div>
               </div>
 
               {/* Justification */}
-              {request.justification && (
+              {justification && (
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-1">Justification</p>
                   <p className="text-sm text-foreground line-clamp-2">
-                    {request.justification}
+                    {justification}
                   </p>
                 </div>
               )}
@@ -123,7 +135,8 @@ export function RequestCards({ requests, mutate }: RequestCardsProps) {
               )}
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {selectedRequest && action && (

@@ -70,43 +70,88 @@ export interface OktaCampaign {
   id: string;
   name: string;
   description?: string;
-  status: 'ACTIVE' | 'CLOSED' | 'SCHEDULED' | 'BUILDING' | 'LAUNCHING';
+  status: 'ACTIVE' | 'COMPLETED' | 'CLOSED' | 'SCHEDULED' | 'BUILDING' | 'LAUNCHING' | 'ERROR';
   created: string;
   lastUpdated: string;
   launchedDate?: string;
   endedDate?: string;
   scheduledStartDate?: string;
   deadline?: string;
+  scheduleSettings?: {
+    type: string;
+    startDate?: string;
+    endDate?: string;
+    durationInDays?: number;
+    timeZone?: string;
+  };
 }
 
 // Governance - Certification Tasks
 export interface OktaCertificationTask {
   id: string;
   campaignId: string;
+  campaignName?: string;
+  // Mapped status: UNREVIEWED → PENDING, decided → COMPLETED
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'EXPIRED';
   reviewerId: string;
   resourceId: string;
   resourceType: string;
   resourceName?: string;
-  decision?: 'APPROVE' | 'REVOKE' | null;
+  decision?: 'APPROVE' | 'REVOKE' | 'UNREVIEWED' | null;
   decisionDate?: string;
   justification?: string;
   dueDate?: string;
   createdDate: string;
+  // From Governance Reviews API v1
+  principalProfile?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    status: string;
+  };
+  reviewerProfile?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    status: string;
+  };
+  remediationStatus?: string;
+  reviewerType?: string;
 }
 
 // Governance - Access Requests
 export interface OktaAccessRequest {
   id: string;
-  requesterId: string;
-  requesterName?: string;
-  resourceId: string;
-  resourceName?: string;
-  resourceType: string;
-  status: 'PENDING' | 'APPROVED' | 'DENIED' | 'CANCELLED' | 'EXPIRED';
-  justification?: string;
+  status: 'SUBMITTED' | 'PENDING' | 'APPROVED' | 'DENIED' | 'REJECTED' | 'CANCELED' | 'EXPIRED';
   created: string;
+  createdBy?: string;
   lastUpdated: string;
+  lastUpdatedBy?: string;
+  resolved?: string;
+  grantStatus?: string;
+  granted?: string;
+  requestedBy?: { type: string; externalId: string };
+  requestedFor?: { type: string; externalId: string };
+  requested?: {
+    entryId?: string;
+    resourceId?: string;
+    resourceType?: string;
+    accessScopeId?: string;
+    accessScopeType?: string;
+  };
+  requesterFieldValues?: Array<{ id: string; label: string; type: string; value: string }>;
+  _links?: Record<string, { href: string; type?: string }>;
+  // Enriched by our API route (resolved from user IDs)
+  requesterName?: string;
+  requestedForName?: string;
+  // Legacy flat fields (for backwards compatibility)
+  requesterId?: string;
+  resourceId?: string;
+  resourceName?: string;
+  resourceType?: string;
+  justification?: string;
   reviewerId?: string;
   reviewerComment?: string;
   decisionDate?: string;

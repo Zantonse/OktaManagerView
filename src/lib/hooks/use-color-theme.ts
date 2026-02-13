@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 
 const COLOR_THEMES = [
-  { id: "okta", label: "Okta Blue" },
-  { id: "midnight", label: "Midnight Violet" },
+  { id: "okta", label: "Okta Indigo" },
+  { id: "midnight", label: "Classic Blue" },
   { id: "ember", label: "Ember Red" },
   { id: "forest", label: "Forest Green" },
   { id: "sunset", label: "Sunset Orange" },
@@ -47,7 +47,7 @@ export function useColorTheme() {
     return next;
   }, [colorTheme]);
 
-  const themeLabel = COLOR_THEMES.find((t) => t.id === colorTheme)?.label ?? "Okta Blue";
+  const themeLabel = COLOR_THEMES.find((t) => t.id === colorTheme)?.label ?? "Okta Indigo";
 
   return { colorTheme, cycleTheme, themeLabel, mounted, themes: COLOR_THEMES };
 }

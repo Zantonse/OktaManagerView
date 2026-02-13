@@ -1,8 +1,12 @@
+import { auth } from "@/lib/auth";
 import { CreateReviewForm } from "@/components/reviews/create-review-form";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default function CreateReviewPage() {
+export default async function CreateReviewPage() {
+  const session = await auth();
+  const managerName = session?.user?.name || "";
+
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex flex-col gap-2">
@@ -14,7 +18,7 @@ export default function CreateReviewPage() {
         <h1 className="text-3xl font-bold tracking-tight">Create Access Review</h1>
       </div>
 
-      <CreateReviewForm />
+      <CreateReviewForm managerName={managerName} />
     </div>
   );
 }

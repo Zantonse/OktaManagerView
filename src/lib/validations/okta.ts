@@ -22,7 +22,7 @@ export type PTOAssignmentInput = z.infer<typeof ptoAssignmentSchema>;
  * POST /api/okta/governance/certifications
  */
 export const certificationDecisionSchema = z.object({
-  campaignId: z.string().min(1, "campaignId is required"),
+  campaignId: z.string().optional(), // kept for backward compat but not needed for v1 reviews API
   certificationId: z.string().min(1, "certificationId is required"),
   decision: z.enum(["APPROVE", "REVOKE"]),
   justification: z.string().optional(),

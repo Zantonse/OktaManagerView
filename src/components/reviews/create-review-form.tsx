@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { OktaUser } from "@/types/okta";
 import { Button } from "@/components/ui/button";
@@ -10,36 +10,40 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Users } from "lucide-react";
 import { toast } from "sonner";
 import { fetcher } from "@/lib/fetcher";
 
-export function CreateReviewForm() {
+interface CreateReviewFormProps {
+  managerName?: string;
+}
+
+export function CreateReviewForm({ managerName }: CreateReviewFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [name, setName] = useState("");
+  const defaultName = managerName ? `${managerName} Direct report campaign` : "";
+  const [name, setName] = useState(defaultName);
   const [description, setDescription] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const hasInitialized = useRef(false);
 
-  // Get pre-selected users from URL params
-  const preSelectedUsers = searchParams.get("users")?.split(",") || [];
-
-  // Initialize with pre-selected users
-  useEffect(() => {
-    if (preSelectedUsers.length > 0) {
-      setSelectedUsers(new Set(preSelectedUsers));
-    }
-  }, []);
-
-  // Fetch users list
-  const { data: users = [], error: usersError, isLoading: isLoadingUsers, mutate: mutateUsers } = useSWR(
+  // Fetch direct reports (the /api/okta/users endpoint returns only this manager's reports)
+  const { data: usersResponse, error: usersError, isLoading: isLoadingUsers, mutate: mutateUsers } = useSWR<{ data: OktaUser[]; nextCursor?: string }>(
     "/api/okta/users",
     fetcher,
     { revalidateOnFocus: false }
   );
 
-  const userList = Array.isArray(users) ? users : [];
+  const userList: OktaUser[] = usersResponse?.data ?? (Array.isArray(usersResponse) ? usersResponse : []);
+
+  // Pre-select all direct reports once they load
+  useEffect(() => {
+    if (userList.length > 0 && !hasInitialized.current) {
+      hasInitialized.current = true;
+      setSelectedUsers(new Set(userList.map((u) => u.id)));
+    }
+  }, [userList]);
 
   const handleUserToggle = (userId: string) => {
     const newSelected = new Set(selectedUsers);
@@ -51,11 +55,24 @@ export function CreateReviewForm() {
     setSelectedUsers(newSelected);
   };
 
+  const handleSelectAll = () => {
+    setSelectedUsers(new Set(userList.map((u) => u.id)));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedUsers(new Set());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
       toast.error("Review name is required");
+      return;
+    }
+
+    if (selectedUsers.size === 0) {
+      toast.error("Select at least one team member");
       return;
     }
 
@@ -76,7 +93,7 @@ export function CreateReviewForm() {
         throw new Error(data.error || "Failed to create review");
       }
 
-      toast.success("Access review created");
+      toast.success("Manager access review created");
       router.push("/reviews");
     } catch (error) {
       console.error("Error creating review:", error);
@@ -90,16 +107,33 @@ export function CreateReviewForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Review Type Badge */}
       <Card className="p-6">
-        {/* Review Name */}
         <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold">Manager Access Review</h3>
+              <p className="text-sm text-muted-foreground">
+                Review access for your direct reports
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="space-y-4">
+          {/* Review Name */}
           <div>
             <Label htmlFor="name" className="text-base font-semibold">
               Review Name <span className="text-red-500">*</span>
             </Label>
             <Input
               id="name"
-              placeholder="e.g., Q4 2024 Compliance Review"
+              placeholder="e.g., Q1 2025 Manager Access Review"
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isLoading}
@@ -114,7 +148,7 @@ export function CreateReviewForm() {
             </Label>
             <Textarea
               id="description"
-              placeholder="Optional: Add context for reviewers"
+              placeholder="Optional: Add context for this review"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isLoading}
@@ -124,16 +158,45 @@ export function CreateReviewForm() {
         </div>
       </Card>
 
-      {/* Select Team Members */}
+      {/* Team Members */}
       <Card className="p-6">
         <div className="space-y-4">
-          <div>
-            <h3 className="text-base font-semibold">
-              Select Team Members {selectedUsers.size > 0 && `(${selectedUsers.size})`}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Choose the team members whose access will be reviewed
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-semibold">
+                Direct Reports
+                {selectedUsers.size > 0 && (
+                  <Badge variant="secondary" className="ml-2 font-mono">
+                    {selectedUsers.size}/{userList.length}
+                  </Badge>
+                )}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                All your direct reports are included by default. Uncheck to exclude.
+              </p>
+            </div>
+            {userList.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  disabled={isLoading || selectedUsers.size === userList.length}
+                >
+                  Select all
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDeselectAll}
+                  disabled={isLoading || selectedUsers.size === 0}
+                >
+                  Deselect all
+                </Button>
+              </div>
+            )}
           </div>
 
           {usersError ? (
@@ -152,7 +215,7 @@ export function CreateReviewForm() {
               ))}
             </div>
           ) : userList.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No users available</p>
+            <p className="text-sm text-muted-foreground">No direct reports found</p>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {userList.map((user: OktaUser) => (
@@ -179,13 +242,13 @@ export function CreateReviewForm() {
         </div>
       </Card>
 
-      {/* Submit Button */}
+      {/* Submit */}
       <div className="flex gap-2">
         <Button
           type="submit"
-          disabled={isLoading || !name.trim()}
+          disabled={isLoading || !name.trim() || selectedUsers.size === 0}
         >
-          {isLoading ? "Creating..." : "Start Review"}
+          {isLoading ? "Creating..." : "Start Manager Review"}
         </Button>
       </div>
     </form>

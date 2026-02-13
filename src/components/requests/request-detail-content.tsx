@@ -104,8 +104,8 @@ export function RequestDetailContent({ request: initialRequest }: RequestDetailC
             <p className="text-xs font-semibold text-muted-foreground mb-2">
               RESOURCE TYPE
             </p>
-            <Badge className={getResourceTypeColor(initialRequest.resourceType)}>
-              {initialRequest.resourceType}
+            <Badge className={getResourceTypeColor(initialRequest.resourceType || "")}>
+              {initialRequest.resourceType || "—"}
             </Badge>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getDelegates, createDelegate } from "@/lib/okta/client";
+import { getDelegatesAsUser, createDelegateAsUser } from "@/lib/okta/client";
 import { createDelegateSchema } from "@/lib/validations/okta";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -9,9 +9,12 @@ export async function GET(request: NextRequest) {
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!session.accessToken) {
+    return NextResponse.json({ error: "No access token available" }, { status: 401 });
+  }
 
   try {
-    const delegates = await getDelegates();
+    const delegates = await getDelegatesAsUser(session.accessToken);
     return NextResponse.json({ delegates, warning: undefined });
   } catch (error) {
     console.warn("Delegates API not available (Beta):", error);
@@ -26,6 +29,9 @@ export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (!session.accessToken) {
+    return NextResponse.json({ error: "No access token available" }, { status: 401 });
   }
 
   try {
@@ -50,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     const { delegateId, scope, startDate, endDate } = validatedData;
 
-    const delegate = await createDelegate({
+    const delegate = await createDelegateAsUser(session.accessToken, {
       delegateId,
       scope,
       startDate,
