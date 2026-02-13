@@ -108,6 +108,13 @@ export function TeamTable({
     }
   };
 
+  const statusOrder: Record<string, number> = {
+    ACTIVE: 0,
+    PROVISIONED: 1,
+    SUSPENDED: 2,
+    DEPROVISIONED: 3,
+  };
+
   const sortedUsers = [...users].sort((a, b) => {
     let aVal: any;
     let bVal: any;
@@ -122,8 +129,8 @@ export function TeamTable({
         bVal = b.profile.email;
         break;
       case "status":
-        aVal = a.status;
-        bVal = b.status;
+        aVal = statusOrder[a.status] ?? 99;
+        bVal = statusOrder[b.status] ?? 99;
         break;
       case "lastLogin":
         aVal = new Date(a.lastLogin || 0).getTime();

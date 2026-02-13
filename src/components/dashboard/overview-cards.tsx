@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, ClipboardCheck } from "lucide-react";
@@ -18,6 +19,7 @@ interface StatCardProps {
   isLoading: boolean;
   iconBg: string;
   iconColor: string;
+  href?: string;
 }
 
 function StatCard({
@@ -27,6 +29,7 @@ function StatCard({
   sublabel,
   isLoading,
   iconBg,
+  href,
 }: StatCardProps) {
   if (isLoading) {
     return (
@@ -44,22 +47,36 @@ function StatCard({
     );
   }
 
-  return (
-    <Card className="group relative overflow-hidden border-0 bg-card shadow-sm hover:shadow-md transition-all duration-200">
-      <div className="p-5">
-        <div className="flex items-center gap-4">
-          <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
-            {icon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
-            <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold tracking-tight text-foreground">{stat}</p>
-              <span className="text-[11px] font-medium text-muted-foreground/70">{sublabel}</span>
-            </div>
+  const content = (
+    <div className="p-5">
+      <div className="flex items-center gap-4">
+        <div className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-2xl font-bold tracking-tight text-foreground">{stat}</p>
+            <span className="text-[11px] font-medium text-muted-foreground/70">{sublabel}</span>
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        <Card className="group relative overflow-hidden border-0 bg-card shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
+          {content}
+        </Card>
+      </Link>
+    );
+  }
+
+  return (
+    <Card className="group relative overflow-hidden border-0 bg-card shadow-sm hover:shadow-md transition-all duration-200">
+      {content}
     </Card>
   );
 }
@@ -85,6 +102,7 @@ export function OverviewCards({
       sublabel: "active",
       iconBg: "bg-violet-50 dark:bg-violet-950/40",
       iconColor: "text-violet-600",
+      href: "/reviews",
     },
   ];
 
@@ -100,6 +118,7 @@ export function OverviewCards({
           isLoading={isLoading}
           iconBg={card.iconBg}
           iconColor={card.iconColor}
+          href={card.href}
         />
       ))}
     </div>

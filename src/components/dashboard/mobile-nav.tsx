@@ -29,7 +29,7 @@ const navigationItems = [
   { href: "/reviews", label: "Access Reviews", icon: ClipboardCheck },
 ];
 
-const settingsItems = [{ href: "/settings", label: "Settings", icon: Settings }];
+const settingsItems = [{ href: "/settings", label: "Set Governance Delegates", icon: Settings }];
 
 export function MobileNavSheet({
   open,
