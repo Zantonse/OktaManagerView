@@ -16,31 +16,18 @@ export function DashboardContent() {
   );
   const usersData = Array.isArray(usersResponse) ? usersResponse : usersResponse?.data;
 
-  // Fetch pending access requests — API returns { data, nextCursor } or throws
-  const { data: requestsResponse, isLoading: isLoadingRequests } = useSWR(
-    "/api/okta/governance/requests?status=PENDING&limit=50",
+  // Fetch pending review count for the logged-in manager
+  const { data: reviewsCountResponse, isLoading: isLoadingReviews } = useSWR(
+    "/api/okta/governance/certifications?pendingOnly=true&countOnly=true",
     fetcher,
     { revalidateOnFocus: false, shouldRetryOnError: false }
   );
 
-  // Fetch active campaigns — API returns { data, nextCursor } or throws
-  const { data: campaignsResponse, isLoading: isLoadingCampaigns } = useSWR(
-    "/api/okta/governance/campaigns?status=ACTIVE&limit=50",
-    fetcher,
-    { revalidateOnFocus: false, shouldRetryOnError: false }
-  );
-
-  const isLoading = isLoadingUsers || isLoadingRequests || isLoadingCampaigns;
+  const isLoading = isLoadingUsers || isLoadingReviews;
 
   // Extract metrics — safely unwrap { data } wrappers and guard with Array.isArray
   const directReportsCount = Array.isArray(usersData) ? usersData.length : 0;
-  const onPTOCount = Array.isArray(usersData)
-    ? usersData.filter((u) => u.profile.onPTO === true).length
-    : 0;
-  const requestsArray = requestsResponse?.data ?? requestsResponse;
-  const pendingRequestsCount = Array.isArray(requestsArray) ? requestsArray.length : 0;
-  const campaignsArray = campaignsResponse?.data ?? campaignsResponse;
-  const activeReviewsCount = Array.isArray(campaignsArray) ? campaignsArray.length : 0;
+  const activeReviewsCount = reviewsCountResponse?.count ?? 0;
 
   return (
     <div className="space-y-6 px-6 py-6 lg:px-8 lg:py-8">
@@ -61,8 +48,6 @@ export function DashboardContent() {
       <OverviewCards
         directReportsCount={directReportsCount}
         pendingReviewsCount={activeReviewsCount}
-        accessRequestsCount={pendingRequestsCount}
-        onPTOCount={onPTOCount}
         isLoading={isLoading}
       />
 

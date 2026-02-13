@@ -2,13 +2,11 @@
 
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, ClipboardCheck, Inbox, CalendarDays } from "lucide-react";
+import { Users, ClipboardCheck } from "lucide-react";
 
 interface OverviewCardsProps {
   directReportsCount: number;
   pendingReviewsCount: number;
-  accessRequestsCount: number;
-  onPTOCount: number;
   isLoading: boolean;
 }
 
@@ -69,47 +67,29 @@ function StatCard({
 export function OverviewCards({
   directReportsCount,
   pendingReviewsCount,
-  accessRequestsCount,
-  onPTOCount,
   isLoading,
 }: OverviewCardsProps) {
   const cards = [
     {
-      icon: <Users className="h-5 w-5 text-blue-600" />,
+      icon: <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />,
       stat: directReportsCount,
       label: "Direct Reports",
       sublabel: "people",
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-600",
+      iconBg: "bg-indigo-50 dark:bg-indigo-950/40",
+      iconColor: "text-indigo-600",
     },
     {
-      icon: <ClipboardCheck className="h-5 w-5 text-sky-600" />,
+      icon: <ClipboardCheck className="h-5 w-5 text-violet-600 dark:text-violet-400" />,
       stat: pendingReviewsCount,
       label: "Pending Reviews",
       sublabel: "active",
-      iconBg: "bg-sky-50",
-      iconColor: "text-sky-600",
-    },
-    {
-      icon: <Inbox className="h-5 w-5 text-amber-600" />,
-      stat: accessRequestsCount,
-      label: "Access Requests",
-      sublabel: "pending",
-      iconBg: "bg-amber-50",
-      iconColor: "text-amber-600",
-    },
-    {
-      icon: <CalendarDays className="h-5 w-5 text-emerald-600" />,
-      stat: onPTOCount,
-      label: "On PTO",
-      sublabel: "away",
-      iconBg: "bg-emerald-50",
-      iconColor: "text-emerald-600",
+      iconBg: "bg-violet-50 dark:bg-violet-950/40",
+      iconColor: "text-violet-600",
     },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2">
       {cards.map((card, i) => (
         <StatCard
           key={i}
