@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Okta Manager Dashboard - Hackathon Presentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --okta-blue: #1662dd;
+    --okta-navy: #0d1117;
+    --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e1b4b 40%, #1662dd 100%);
+    --gradient-dark: linear-gradient(135deg, #0d1117 0%, #1e293b 100%);
+  }
+
+  html { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; scroll-behavior: smooth; }
+  body { background: var(--okta-navy); color: #191919; overflow-x: hidden; }
+
+  .slide {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (max-width: 768px) { .slide { padding: 40px 24px; } }
+
+  /* ─── HERO ─── */
+  .slide-hero {
+    background: var(--gradient-hero);
+    text-align: center;
+    align-items: center;
+  }
+  .slide-hero::before {
+    content: '';
+    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle at 30% 40%, rgba(22,98,221,0.15) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(110,86,207,0.1) 0%, transparent 50%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:.8} 50%{transform:scale(1.05);opacity:1} }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 100px; padding: 8px 20px;
+    font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.8);
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: 32px; position: relative; z-index: 1; backdrop-filter: blur(10px);
+  }
+  .hero-badge .dot { width:8px;height:8px;background:#30a46c;border-radius:50%;animation:blink 2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .hero-title {
+    font-size: clamp(48px,6vw,80px); font-weight: 900; color: #fff;
+    line-height: 1.05; letter-spacing: -2px; position: relative; z-index: 1; max-width: 900px;
+  }
+  .hero-title .highlight {
+    background: linear-gradient(135deg,#60a5fa,#a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .hero-subtitle {
+    font-size: clamp(18px,2.5vw,24px); color: rgba(255,255,255,0.6);
+    margin-top: 24px; font-weight: 400; line-height: 1.5;
+    position: relative; z-index: 1; max-width: 700px;
+  }
+  .hero-meta {
+    display: flex; gap: 40px; margin-top: 48px;
+    position: relative; z-index: 1; flex-wrap: wrap; justify-content: center;
+  }
+  .hero-meta-item { text-align: center; }
+  .hero-meta-item .number { font-size: 32px; font-weight: 800; color: #fff; }
+  .hero-meta-item .label { font-size: 12px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+  /* ─── DARK SLIDE ─── */
+  .slide-dark { background: var(--gradient-dark); color: #fff; }
+  .slide-dark .slide-number { color: rgba(255,255,255,0.2); }
+  .slide-number { position: absolute; top: 40px; right: 60px; font-size: 14px; font-weight: 600; letter-spacing: 2px; }
+
+  .section-label {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 3px; color: #60a5fa; margin-bottom: 16px;
+  }
+  .slide-title {
+    font-size: clamp(36px,4.5vw,56px); font-weight: 800;
+    line-height: 1.1; letter-spacing: -1.5px; margin-bottom: 20px; color: #fff;
+  }
+  .slide-subtitle { font-size: 20px; color: rgba(255,255,255,0.6); line-height: 1.6; max-width: 700px; }
+
+  /* ─── QUOTE STRIP ─── */
+  .quote-strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 40px;
+  }
+  @media (max-width: 768px) { .quote-strip { grid-template-columns: 1fr; } }
+  .quote-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 28px; position: relative;
+  }
+  .quote-card::before {
+    content: '\201C'; position: absolute; top: 12px; left: 20px;
+    font-size: 56px; color: rgba(96,165,250,0.2); font-family: Georgia, serif; line-height: 1;
+  }
+  .quote-card p { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.7; font-style: italic; padding-top: 20px; }
+  .quote-card .source { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 12px; font-style: normal; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ─── FLOW ─── */
+  .flow { display: flex; align-items: center; gap: 12px; margin-top: 36px; flex-wrap: wrap; justify-content: center; }
+  .flow-step {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 18px 22px; text-align: center; min-width: 140px;
+  }
+  .flow-step .step-num { font-size: 10px; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+  .flow-step .step-title { font-size: 14px; font-weight: 700; color: #fff; }
+  .flow-step .step-desc { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .flow-arrow { font-size: 20px; color: rgba(255,255,255,0.2); }
+
+  /* ─── SCORECARD ─── */
+  .score-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 40px;
+  }
+  @media (max-width: 768px) { .score-grid { grid-template-columns: 1fr; } }
+  .score-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 28px;
+  }
+  .score-card .score-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+    padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .score-card .score-pct { font-size: 28px; font-weight: 900; color: #fff; }
+  .score-card .score-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+  .score-card .score-label.blue { color: #60a5fa; }
+  .score-card .score-label.purple { color: #a78bfa; }
+  .score-card .score-label.green { color: #4ade80; }
+
+  .score-row-detail {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .score-row-detail:last-child { border-bottom: none; }
+  .score-q-full {
+    font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85);
+    margin-bottom: 6px;
+  }
+  .score-why {
+    font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6;
+  }
+
+  /* ─── DEMO SLIDE ─── */
+  .slide-demo {
+    background: var(--gradient-hero); text-align: center; align-items: center;
+  }
+  .slide-demo::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(110,86,207,0.2) 0%, transparent 60%);
+  }
+  .demo-title {
+    font-size: clamp(48px,6vw,80px); font-weight: 900; color: #fff;
+    line-height: 1.05; letter-spacing: -2px; position: relative; z-index: 1;
+  }
+  .demo-sub {
+    font-size: 22px; color: rgba(255,255,255,0.5); margin-top: 16px;
+    position: relative; z-index: 1; font-weight: 400;
+  }
+  .demo-features {
+    display: flex; gap: 32px; margin-top: 48px; position: relative; z-index: 1; flex-wrap: wrap; justify-content: center;
+  }
+  .demo-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 100px; padding: 10px 22px;
+    font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+  }
+  .demo-chip .chip-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ─── CTA ─── */
+  .slide-cta { background: var(--gradient-dark); text-align: center; align-items: center; }
+  .cta-title {
+    font-size: clamp(36px,4.5vw,56px); font-weight: 900; color: #fff;
+    line-height: 1.1; letter-spacing: -2px; max-width: 800px;
+  }
+  .cta-sub {
+    font-size: 18px; color: rgba(255,255,255,0.5); margin-top: 16px;
+    max-width: 600px; line-height: 1.6;
+  }
+  .cta-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    margin-top: 40px; max-width: 800px; width: 100%;
+  }
+  @media (max-width: 768px) { .cta-cards { grid-template-columns: 1fr; } }
+  .cta-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 24px; text-align: center;
+  }
+  .cta-card .cta-icon { font-size: 28px; margin-bottom: 8px; }
+  .cta-card .cta-label { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.8); }
+  .cta-card .cta-desc { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 4px; line-height: 1.5; }
+
+  /* NAV DOTS */
+  .nav-dots {
+    position: fixed; right: 24px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 12px; z-index: 100;
+  }
+  .nav-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); border: none; cursor: pointer;
+    transition: all 0.3s; padding: 0;
+  }
+  .nav-dot.active { background: var(--okta-blue); transform: scale(1.3); }
+  .nav-dot:hover { background: rgba(255,255,255,0.5); }
+</style>
+</head>
+<body>
+
+<nav class="nav-dots" id="navDots"></nav>
+
+<!-- ═══════════════════════════════ -->
+<!-- SLIDE 1: HERO -->
+<!-- ═══════════════════════════════ -->
+<section class="slide slide-hero" id="slide-1">
+  <div class="hero-badge"><span class="dot"></span> Okta Hackathon 2025</div>
+  <h1 class="hero-title">Manager<br><span class="highlight">Self-Service</span><br>Dashboard</h1>
+  <p class="hero-subtitle">
+    The #1 customer-requested governance feature &mdash; a dedicated portal empowering managers
+    to own identity governance without admin access. Built with AI.
+  </p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><div class="number">6</div><div class="label">Okta APIs</div></div>
+    <div class="hero-meta-item"><div class="number">20+</div><div class="label">Endpoints</div></div>
+    <div class="hero-meta-item"><div class="number">100%</div><div class="label">AI-Assisted</div></div>
+    <div class="hero-meta-item"><div class="number">0</div><div class="label">Admin Access</div></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ -->
+<!-- SLIDE 2: PROBLEM + WHY OKTA -->
+<!-- ═══════════════════════════════ -->
+<section class="slide slide-dark" id="slide-2">
+  <span class="slide-number">02</span>
+  <div class="section-label">The Problem &amp; Why Okta</div>
+  <h2 class="slide-title">Customers want managers to<br>manage their own teams.</h2>
+
+  <div class="quote-strip">
+    <div class="quote-card">
+      <p>Managers should be able to see all their direct reports and what they have access to &mdash; without filing a ticket to IT.</p>
+      <div class="source">Who's on my team?</div>
+    </div>
+    <div class="quote-card">
+      <p>When someone leaves a project or changes roles, their manager should be able to remove access immediately &mdash; not wait for an admin.</p>
+      <div class="source">Remove access fast</div>
+    </div>
+    <div class="quote-card">
+      <p>When a manager goes on PTO, someone else needs to handle reviews and approvals. Managers should set that up themselves.</p>
+      <div class="source">Delegate for PTO</div>
+    </div>
+  </div>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="step-num">Auth</div>
+      <div class="step-title">Okta OIDC</div>
+      <div class="step-desc">OAuth + refresh</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Data</div>
+      <div class="step-title">Management API</div>
+      <div class="step-desc">Users, apps, lifecycle</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Governance</div>
+      <div class="step-title">Governance API</div>
+      <div class="step-desc">Campaigns, reviews</div>
+    </div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step">
+      <div class="step-num">Continuity</div>
+      <div class="step-title">Delegates API</div>
+      <div class="step-desc">PTO delegation</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ -->
+<!-- SLIDE 3: SCORECARD -->
+<!-- ═══════════════════════════════ -->
+<section class="slide slide-dark" id="slide-3">
+  <span class="slide-number">03</span>
+  <div class="section-label">Judging Criteria</div>
+  <h2 class="slide-title">How we score.</h2>
+
+  <div class="score-grid">
+    <div class="score-card">
+      <div class="score-header">
+        <span class="score-label blue">GenARR Potential</span>
+        <span class="score-pct">50%</span>
+      </div>
+      <div class="score-row-detail">
+        <div class="score-q-full">Does this hack increase demo impact?</div>
+        <div class="score-why">Turns abstract OIG APIs into a tangible product story. SEs can show a real manager portal instead of describing what's possible with APIs.</div>
+      </div>
+      <div class="score-row-detail">
+        <div class="score-q-full">Does this hack help answer "Why Okta"?</div>
+        <div class="score-why">Built entirely on Okta's APIs &mdash; 6 API families, dual-auth, OIDC login. No competitor has APIs comprehensive enough to build this. Proves Okta is a platform, not just a product.</div>
+      </div>
+      <div class="score-row-detail">
+        <div class="score-q-full">How widely applicable is this hack?</div>
+        <div class="score-why">Every OIG customer has managers with direct reports. Manager self-service applies universally across industries, company sizes, and compliance frameworks (SOX, HIPAA, SOC2).</div>
+      </div>
+    </div>
+
+    <div class="score-card">
+      <div class="score-header">
+        <span class="score-label purple">Challenging</span>
+        <span class="score-pct">35%</span>
+      </div>
+      <div class="score-row-detail">
+        <div class="score-q-full">Does this hack provide value in a new way?</div>
+        <div class="score-why">No manager-facing governance portal exists today. This creates an entirely new persona experience &mdash; managers go from zero visibility to full self-service.</div>
+      </div>
+      <div class="score-row-detail">
+        <div class="score-q-full">How innovative was the use of AI?</div>
+        <div class="score-why">Claude Code served as architect + engineer &mdash; designing the dual-auth pattern, debugging Governance API quirks (unreliable SCIM filters, inconsistent response envelopes), and iterating on UI design.</div>
+      </div>
+      <div class="score-row-detail">
+        <div class="score-q-full">How technically impressive is this hack?</div>
+        <div class="score-why">20+ API endpoints across 6 families. Dual-auth (SSWS + Bearer) with silent token refresh. Server-side SCIM safety filters. Pagination handling across two different pagination models.</div>
+      </div>
+    </div>
+
+    <div class="score-card">
+      <div class="score-header">
+        <span class="score-label green">Demo Quality</span>
+        <span class="score-pct">15%</span>
+      </div>
+      <div class="score-row-detail">
+        <div class="score-q-full">Is this a good value-based demonstration?</div>
+        <div class="score-why">Solves a real, repeatedly-requested customer problem. Every feature maps directly to a pain point managers articulate in discovery calls.</div>
+      </div>
+      <div class="score-row-detail">
+        <div class="score-q-full">Does the demonstration make you go "Wow"?</div>
+        <div class="score-why">Live Okta org with real data. Production-grade UI with dark mode, mobile responsive, skeleton loading. Not a mockup &mdash; every click hits the Okta API.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ -->
+<!-- SLIDE 4: DEMO TRANSITION -->
+<!-- ═══════════════════════════════ -->
+<section class="slide slide-demo" id="slide-4">
+  <h1 class="demo-title">Let me show you.</h1>
+  <p class="demo-sub">Live demo &mdash; real Okta org, real data, real governance actions.</p>
+
+  <div class="demo-features">
+    <div class="demo-chip"><span class="chip-dot" style="background:#818cf8"></span> Team Overview</div>
+    <div class="demo-chip"><span class="chip-dot" style="background:#a78bfa"></span> Access Reviews</div>
+    <div class="demo-chip"><span class="chip-dot" style="background:#4ade80"></span> Delegate Management</div>
+    <div class="demo-chip"><span class="chip-dot" style="background:#fbbf24"></span> Lifecycle Actions</div>
+    <div class="demo-chip"><span class="chip-dot" style="background:#f87171"></span> User Entitlements</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ -->
+<!-- SLIDE 5: CLOSING CTA -->
+<!-- ═══════════════════════════════ -->
+<section class="slide slide-cta" id="slide-5">
+  <h1 class="cta-title">The feature customers<br>have been asking for.</h1>
+  <p class="cta-sub">
+    Manager self-service governance &mdash; the unlock for OIG adoption at scale.
+  </p>
+  <div class="cta-cards">
+    <div class="cta-card">
+      <div class="cta-icon">&#128200;</div>
+      <div class="cta-label">Drives OIG Revenue</div>
+      <div class="cta-desc">Natural upsell from WF/AM. Every OIG customer needs this.</div>
+    </div>
+    <div class="cta-card">
+      <div class="cta-icon">&#129302;</div>
+      <div class="cta-label">AI-Native Build</div>
+      <div class="cta-desc">Claude Code as architect + engineer. Real API complexity solved.</div>
+    </div>
+    <div class="cta-card">
+      <div class="cta-icon">&#9889;</div>
+      <div class="cta-label">Production Ready</div>
+      <div class="cta-desc">Live data. Dark mode. Mobile. Not a prototype.</div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const navDots = document.getElementById('navDots');
+  slides.forEach((slide, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot';
+    dot.setAttribute('aria-label', `Slide ${i + 1}`);
+    dot.addEventListener('click', () => slide.scrollIntoView({ behavior: 'smooth' }));
+    navDots.appendChild(dot);
+  });
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const idx = Array.from(slides).indexOf(entry.target);
+        document.querySelectorAll('.nav-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+      }
+    });
+  }, { threshold: 0.5 });
+  slides.forEach(s => observer.observe(s));
+  document.addEventListener('keydown', (e) => {
+    const active = Array.from(slides).findIndex(s => {
+      const rect = s.getBoundingClientRect();
+      return rect.top >= -100 && rect.top < window.innerHeight / 2;
+    });
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      slides[Math.min(active + 1, slides.length - 1)].scrollIntoView({ behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      slides[Math.max(active - 1, 0)].scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+</script>
+</body>
+</html>

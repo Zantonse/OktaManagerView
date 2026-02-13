@@ -4,11 +4,12 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-slate-950 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.15),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(139,92,246,0.1),transparent_50%)]" />
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-[#f4f4f4]">
       <div className="relative z-10">
         {children}
+      </div>
+      <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center">
+        <span className="text-xs text-[#6e6e78]">Powered by Okta</span>
       </div>
     </div>
   );

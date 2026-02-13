@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3-Minute Demo Script</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 40px 60px;
+    max-width: 900px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+  h1 {
+    font-size: 32px; font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .subtitle { font-size: 14px; color: #8b949e; margin-bottom: 48px; }
+
+  .beat {
+    position: relative;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.2s;
+  }
+  .beat:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+  .beat.transition {
+    background: linear-gradient(135deg, rgba(22,98,221,0.08), rgba(110,86,207,0.08));
+    border-color: rgba(96,165,250,0.15);
+  }
+
+  .beat-header {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+  }
+  .beat-time {
+    font-size: 11px; font-weight: 700; color: #60a5fa;
+    background: rgba(96,165,250,0.12); border-radius: 6px;
+    padding: 3px 10px; letter-spacing: 0.5px; white-space: nowrap;
+  }
+  .beat-title {
+    font-size: 18px; font-weight: 700; color: #fff;
+  }
+
+  .say {
+    font-size: 15px; color: rgba(255,255,255,0.75);
+    margin-bottom: 12px; line-height: 1.7;
+  }
+  .say em { color: #a78bfa; font-style: normal; font-weight: 600; }
+
+  .do-list {
+    list-style: none; padding: 0; margin: 0;
+  }
+  .do-list li {
+    font-size: 13px; color: #8b949e;
+    padding: 6px 0;
+    padding-left: 24px;
+    position: relative;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .do-list li:first-child { border-top: none; }
+  .do-list li::before {
+    content: '';
+    position: absolute; left: 0; top: 14px;
+    width: 10px; height: 10px; border-radius: 3px;
+    border: 2px solid #30a46c;
+  }
+
+  .click { color: #4ade80; font-weight: 600; }
+  .page { color: #fbbf24; font-weight: 600; }
+  .key-point { color: #f87171; font-weight: 600; }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    margin: 32px 0;
+  }
+
+  .legend {
+    display: flex; gap: 24px; margin-bottom: 40px; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #8b949e; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  .tips {
+    margin-top: 48px; padding: 24px 28px;
+    background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.12);
+    border-radius: 14px;
+  }
+  .tips h3 { font-size: 14px; font-weight: 700; color: #fbbf24; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .tips li { font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 6px; list-style: disc; margin-left: 16px; }
+</style>
+</head>
+<body>
+
+<h1>3-Minute Demo Script</h1>
+<p class="subtitle">Manager Self-Service Dashboard &mdash; Hackathon Demo Flow</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> <span class="click">Click action</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div> <span class="page">Page/location</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div> <span class="key-point">Key talking point</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> <em>Emphasis</em></div>
+</div>
+
+<!-- ═══════════════════════════════ -->
+
+<div class="beat">
+  <div class="beat-header">
+    <span class="beat-time">0:00 &ndash; 0:20</span>
+    <span class="beat-title">Login &amp; First Impression</span>
+  </div>
+  <div class="say">
+    "I'm a manager at Acme Corp. I sign in with my <em>regular Okta credentials</em> &mdash; no admin access, no special privileges."
+  </div>
+  <ul class="do-list">
+    <li>Start on <span class="page">Login page</span></li>
+    <li><span class="click">Click "Sign in with Okta"</span> &mdash; OIDC redirect, authenticate</li>
+    <li>Land on <span class="page">Dashboard</span> &mdash; pause to let it load</li>
+    <li>Point out the two overview cards: <em>Direct Reports</em> count and <em>Pending Reviews</em> count</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════ -->
+
+<div class="beat">
+  <div class="beat-header">
+    <span class="beat-time">0:20 &ndash; 0:50</span>
+    <span class="beat-title">My Team &mdash; Who Reports to Me</span>
+  </div>
+  <div class="say">
+    "The first thing customers ask for: <em>let me see my team</em>. Here are all my direct reports with their status, last login, and whether they have a delegate assigned."
+  </div>
+  <ul class="do-list">
+    <li>Scroll down to <span class="page">Team Members table</span> on dashboard</li>
+    <li>Point out columns: name, email, title, <em>status badges</em>, last login, delegates</li>
+    <li><span class="click">Type in the search box</span> &mdash; show live filtering by name</li>
+    <li><span class="click">Open the status dropdown</span>, select <em>"Suspended"</em> &mdash; show server-side filtering</li>
+    <li><span class="click">Reset to "All Statuses"</span></li>
+    <li><span class="click">Click the Status column header</span> &mdash; show sort (Active &rarr; Provisioned &rarr; Suspended &rarr; Deprovisioned)</li>
+    <li><span class="key-point">Key point:</span> "All of this is live from Okta's Management API &mdash; not cached, not mocked."</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════ -->
+
+<div class="beat">
+  <div class="beat-header">
+    <span class="beat-time">0:50 &ndash; 1:20</span>
+    <span class="beat-title">Member Detail &mdash; What Do They Have Access To?</span>
+  </div>
+  <div class="say">
+    "Let's drill into a team member. I can see <em>everything they have access to</em> &mdash; apps, roles, and groups &mdash; all from Okta's APIs."
+  </div>
+  <ul class="do-list">
+    <li><span class="click">Click a team member's name</span> to open <span class="page">Member Detail</span></li>
+    <li>Point out the profile header: name, email, title, status, last login</li>
+    <li><span class="click">Click "Apps &amp; Entitlements" tab</span> &mdash; show assigned apps with role badges</li>
+    <li>Briefly scroll through the app cards</li>
+    <li><span class="click">Click "Groups" tab</span> &mdash; show group memberships</li>
+    <li><span class="key-point">Key point:</span> "A manager can now answer 'what does this person have access to?' without asking IT."</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════ -->
+
+<div class="beat transition">
+  <div class="beat-header">
+    <span class="beat-time">1:20 &ndash; 1:50</span>
+    <span class="beat-title">Start an Access Review</span>
+  </div>
+  <div class="say">
+    "Now the powerful part. I can <em>kick off an access review campaign</em> for my team &mdash; right from this dashboard."
+  </div>
+  <ul class="do-list">
+    <li><span class="click">Click "Start Review" button</span> in quick actions (or navigate to <span class="page">Reviews &rarr; Create</span>)</li>
+    <li>Show the create form: campaign name is pre-filled, direct reports are pre-selected</li>
+    <li>Point out you can <em>exclude specific users</em> if needed</li>
+    <li><span class="click">Click "Create Campaign"</span> &mdash; campaign is created in Okta via the Governance API</li>
+    <li><span class="key-point">Key point:</span> "This just created a real certification campaign in Okta. Two clicks. No admin console."</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════ -->
+
+<div class="beat">
+  <div class="beat-header">
+    <span class="beat-time">1:50 &ndash; 2:15</span>
+    <span class="beat-title">Review Pending Certifications</span>
+  </div>
+  <div class="say">
+    "I also have <em>pending reviews from other campaigns</em> that need my attention. Let's look at those."
+  </div>
+  <ul class="do-list">
+    <li><span class="click">Click "Access Reviews"</span> in the sidebar (or click the Pending Reviews card on dashboard)</li>
+    <li>Show <span class="page">Reviews page</span> with active campaigns and pending counts</li>
+    <li>Point out campaign cards with due dates and pending review counts</li>
+    <li><span class="key-point">Key point:</span> "Everything a manager needs to stay on top of governance &mdash; in one place."</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════ -->
+
+<div class="beat transition">
+  <div class="beat-header">
+    <span class="beat-time">2:15 &ndash; 2:45</span>
+    <span class="beat-title">Set a Governance Delegate for PTO</span>
+  </div>
+  <div class="say">
+    "Last piece: I'm going on vacation. I need someone to <em>cover my reviews while I'm out</em>. I can set that up myself."
+  </div>
+  <ul class="do-list">
+    <li><span class="click">Click "Set Governance Delegates"</span> in the sidebar</li>
+    <li>Show the <span class="page">Settings page</span> with delegate assignment form</li>
+    <li><span class="click">Search for a delegate user</span> in the search field</li>
+    <li>Select scopes (Reviews, Requests) and set <em>start/end dates</em></li>
+    <li><span class="click">Click "Assign Delegate"</span> &mdash; delegation created via Okta Delegates API</li>
+    <li>Point out the delegate now appears in the <em>Active Delegates list</em></li>
+    <li><span class="key-point">Key point:</span> "No reviews go stale. Governance continues even when I'm out."</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════ -->
+
+<div class="beat">
+  <div class="beat-header">
+    <span class="beat-time">2:45 &ndash; 3:00</span>
+    <span class="beat-title">Wrap Up</span>
+  </div>
+  <div class="say">
+    "That's the manager journey: <em>see my team, review their access, start campaigns, set delegates</em> &mdash; all without admin access, all powered by Okta's APIs. This is the feature customers keep asking for."
+  </div>
+  <ul class="do-list">
+    <li><span class="click">Click "End User Dashboard"</span> in sidebar &mdash; show the link back to Okta</li>
+    <li><span class="key-point">Final point:</span> "6 Okta API families. Dual-auth pattern. Built with Claude Code as AI pair-programmer. Production-ready."</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════════════ -->
+
+<div class="tips">
+  <h3>Demo Tips</h3>
+  <ul>
+    <li>Pre-login before the demo starts so OIDC redirect is fast (session already warm)</li>
+    <li>Have at least one active campaign with pending reviews to show on the Reviews page</li>
+    <li>Pick a team member who has several apps assigned for a rich detail view</li>
+    <li>If something loads slow, talk through the architecture while it loads: "This is hitting the Okta API in real-time..."</li>
+    <li>Toggle dark mode by clicking the shield logo if you want a visual "wow" moment</li>
+    <li>If time is tight, skip the certification review step (beat 5) &mdash; the create campaign step is more impactful</li>
+  </ul>
+</div>
+
+</body>
+</html>
