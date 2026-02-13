@@ -58,7 +58,7 @@ export function AccessSummary({ apps, isLoading }: AccessSummaryProps) {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Input placeholder="Search apps..." disabled />
+        <Input placeholder="Search apps..." value="" disabled />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-32" />
